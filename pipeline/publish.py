@@ -607,7 +607,7 @@ def _instagram_request(method: str, url: str, **kwargs) -> dict:
         message = err.get("message") if isinstance(err, dict) else str(err)
         code = err.get("code") if isinstance(err, dict) else None
         message_text = str(message or "unknown API error")
-        if code == 190 or response.status_code == 401 or "access token has expired" in message_text.lower():
+        if str(code) == "190" or response.status_code == 401 or "access token has expired" in message_text.lower():
             raise RuntimeError(
                 "Instagram rejected the access token as expired or invalid. "
                 "The automatic refresh was unable to recover it; generate a new Instagram Login "
