@@ -1,0 +1,8 @@
+# Stage 6 only: local image generation on the RTX 3060 (6 GB).
+# Install the CUDA build of torch first, matched to your driver, e.g.:
+#   pip install torch --index-url https://download.pytorch.org/whl/cu124
+# Then:
+diffusers>=0.27
+transformers>=4.40
+accelerate>=0.30
+safetensors>=0.4

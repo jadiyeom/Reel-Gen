@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family={{ body_font }}:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:{{ w }}px;height:{{ h }}px;overflow:hidden;background:transparent}
+  body{position:relative;font-family:'{{ body_font }}',sans-serif}
+  .logo{position:absolute;right:44px;bottom:120px;width:{{ logo_px }}px;height:{{ logo_px }}px;
+    opacity:{{ opacity }};filter:drop-shadow(0 6px 18px rgba(0,0,0,.45))}
+  .disclaimer{position:absolute;left:0;right:0;bottom:54px;text-align:center;
+    color:#fff;opacity:.55;font-size:28px;font-weight:500;
+    text-shadow:0 2px 8px rgba(0,0,0,.7)}
+</style>
+</head>
+<body>
+  {% if logo_data %}<img class="logo" src="{{ logo_data }}" alt="">{% endif %}
+  <div class="disclaimer">{{ disclaimer }}</div>
+</body>
+</html>

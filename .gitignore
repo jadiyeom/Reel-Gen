@@ -1,0 +1,53 @@
+# --- secrets / env ---
+.env
+.env.local
+.env.*.local
+
+# --- python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# --- editor / OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- claude code local settings ---
+.claude/
+
+# --- generated finals + per-video intermediates (regenerable; large) ---
+output/
+
+# --- machine state / logs ---
+data/state.db
+data/facebook_page_token.json
+data/x_oauth_token.json
+data/drafts/
+library/index.db
+library/_*.txt
+library/_*.log
+.models/
+
+# --- generated / curated media (build your own; don't commit large binaries) ---
+library/clips/*
+library/images/*
+assets/music/*
+assets/brand/*
+assets/outro/*
+
+# keep folder structure + committed templates
+!**/.gitkeep
+!assets/logo/logo.png
+data/instagram_drive_oauth_token.json
+data/youtube_oauth_token.json
+data/youtube_client_secrets.json
+.env
+.env.*
+!.env.example

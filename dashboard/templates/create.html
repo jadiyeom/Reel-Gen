@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+{% block subtitle %}new video{% endblock %}
+{% block body %}
+<style>
+  .panel{background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:24px;margin-bottom:20px}
+  label{display:block;font-size:13px;color:var(--muted);margin-bottom:8px;font-weight:600}
+  input[type=text],textarea,select,input[type=number]{width:100%;background:#0c1118;border:1px solid rgba(255,255,255,.12);
+    border-radius:10px;color:var(--text);padding:13px;font-size:15px;font-family:inherit}
+  textarea{resize:vertical;line-height:1.4}
+  .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:14px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  h2{font-family:'Sora';font-size:20px;margin-bottom:16px}
+  .scene{border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px;margin-bottom:12px}
+  .scene .n{color:var(--accent);font-weight:800;font-family:'Sora';margin-bottom:8px}
+  .hint{color:var(--muted);font-size:12px;margin-top:6px}
+  .muted{color:var(--muted)}
+  .spin{display:inline-block;width:16px;height:16px;border:3px solid rgba(255,255,255,.2);
+    border-top-color:var(--accent);border-radius:50%;animation:s 1s linear infinite;vertical-align:middle}
+  @keyframes s{to{transform:rotate(360deg)}}
+  .hidden{display:none}
+  /* step bar */
+  .stepper{position:sticky;top:66px;z-index:9;display:flex;gap:8px;flex-wrap:wrap;
+    background:rgba(11,15,23,.9);backdrop-filter:blur(8px);padding:14px 2px;margin:-10px 0 18px}
+  .step{display:flex;align-items:center;gap:9px;padding:8px 16px;border-radius:999px;
+    border:1px solid rgba(255,255,255,.12);color:var(--muted);font-size:13px;font-weight:600;
+    cursor:not-allowed;opacity:.55;transition:.15s}
+  .step .num{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    background:rgba(255,255,255,.1);font-size:12px;font-weight:800;flex:none}
+  .step.enabled{cursor:pointer;opacity:1}
+  .step.enabled:hover{border-color:rgba(245,166,35,.5)}
+  .step.active{border-color:var(--accent);color:var(--text);background:rgba(245,166,35,.08)}
+  .step.active .num{background:var(--accent);color:#1a1205}
+  .step.done .num{background:var(--accent);color:#1a1205}
+  .step.done .num::after{content:'✓'}
+  .step.done .num span{display:none}
+  .pick{display:flex;gap:14px;align-items:flex-start}
+  .pick .thumbwrap{position:relative;width:110px;aspect-ratio:9/16;border-radius:8px;overflow:hidden;
+    background:#000;flex:none;cursor:pointer}
+  .pick .thumbwrap video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+  .pick .body{flex:1}
+  .cid{font-size:11px;color:var(--accent);margin-bottom:10px;word-break:break-all}
+  /* picker modal */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:50;display:flex;align-items:center;justify-content:center}
+  .modal.hidden{display:none}
+  .modalbox{background:var(--bg);border:1px solid rgba(255,255,255,.12);border-radius:16px;width:min(980px,93vw);max-height:88vh;display:flex;flex-direction:column;overflow:hidden}
+  .modalhead{display:flex;gap:12px;align-items:center;padding:16px 18px;border-bottom:1px solid rgba(255,255,255,.08)}
+  .modalhead input{flex:1}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;padding:12px 18px 4px}
+  .chip{padding:7px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.14);cursor:pointer;font-size:13px;color:var(--muted)}
+  .chip.active{background:var(--accent);color:#1a1205;border-color:var(--accent);font-weight:700}
+  .pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;padding:14px 18px 18px;overflow-y:auto;flex:1;min-height:0;align-content:start}
+  .pcell{border:2px solid transparent;border-radius:10px;overflow:hidden;cursor:pointer;background:var(--surface)}
+  .pcell:hover{border-color:rgba(245,166,35,.5)}
+  .pcell.sel{border-color:var(--accent)}
+  .pthumb{position:relative;width:100%;aspect-ratio:9/16;background:#000}
+  .pcell video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+  .pthumb .selbadge{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;
+    background:var(--accent);color:#1a1205;font-weight:800;font-size:14px;display:none;
+    align-items:center;justify-content:center;z-index:2}
+  .pcell.sel .selbadge{display:flex}
+  .pcd{font-size:11px;color:var(--muted);padding:6px 8px;line-height:1.3}
+</style>
+
+<div class="stepper" id="stepper">
+  <div class="step" data-step="1" onclick="goStep(1)"><span class="num"><span>1</span></span> Topic</div>
+  <div class="step" data-step="2" onclick="goStep(2)"><span class="num"><span>2</span></span> Script</div>
+  <div class="step" data-step="3" onclick="goStep(3)"><span class="num"><span>3</span></span> Footage</div>
+  <div class="step" data-step="4" onclick="goStep(4)"><span class="num"><span>4</span></span> Produce</div>
+</div>
+
+<div class="panel" id="topicPanel">
+  <h2>1 · Topic</h2>
+  <label>Article URL (optional)</label>
+  <input type="text" id="articleUrl" placeholder="https://example.com/article">
+  <div class="hint">Add an article URL to create an illustrated short grounded in that source; leave blank to use the existing topic workflow.</div>
+  <input type="text" id="topic" placeholder="Leave blank to auto-pick a fresh angle — or type your own">
+  <div class="hint">Blank = it chooses a fresh trading-psychology angle for you. You can edit it after and regenerate.</div>
+  <div class="grid3">
+    <div><label>YouTube format</label><select id="aspectRatio">
+      <option value="9:16">Portrait · 9:16 (Shorts/Reels)</option>
+      <option value="16:9">Landscape · 16:9 (YouTube)</option>
+    </select></div>
+    <div><label>Voice</label><select id="voice">
+      {% for v in ['onyx','ash','ballad','sage','echo','alloy','verse','coral','nova','shimmer','fable'] %}
+      <option value="{{v}}">{{v}}</option>{% endfor %}
+    </select></div>
+    <div><label>Speed (<span id="spv">1.15</span>×)</label>
+      <input type="range" id="speed" min="0.9" max="1.4" step="0.01" value="1.15"
+             oninput="document.getElementById('spv').textContent=this.value"></div>
+    <div><label>Target length (sec)</label><input type="number" id="target" value="20" min="12" max="35"></div>
+  </div>
+  <div class="row" style="margin-top:16px">
+    <button class="btn" onclick="writeScript()">Write script</button>
+    <span id="scriptSpin" class="hidden"><span class="spin"></span> writing…</span>
+  </div>
+</div>
+
+<div class="panel hidden" id="scriptPanel">
+  <h2>2 · Review &amp; edit script</h2>
+  <div class="grid2">
+    <div><label>YouTube title</label><input type="text" id="yt_title"></div>
+    <div><label>Hashtags (space separated)</label><input type="text" id="hashtags"></div>
+  </div>
+  <div style="margin-top:12px"><label>YouTube description</label><textarea id="yt_desc" rows="2"></textarea></div>
+  <div id="scenes" style="margin-top:16px"></div>
+  <div style="margin-top:16px">
+    <label>Not happy? Tell it what to change, then regenerate</label>
+    <input type="text" id="instruction" placeholder="e.g. punchier hook, focus on FOMO, angrier">
+    <div class="row" style="margin-top:14px">
+      <button class="btn ghost" onclick="writeScript(true)">Regenerate</button>
+      <button class="btn" onclick="matchClips()">Approve &amp; pick clips →</button>
+      <span id="regenSpin" class="hidden"><span class="spin"></span></span>
+      <span id="matchSpin" class="hidden"><span class="spin"></span> matching…</span>
+      <span id="savedInd" class="hint" style="margin-left:auto;color:var(--accent)"></span>
+    </div>
+  </div>
+</div>
+
+<div class="panel hidden" id="clipPanel">
+  <h2>3 · Pick the footage</h2>
+  <p class="hint" style="margin-bottom:14px">Auto-matched from your library. Swap any scene's clip below.</p>
+  <div id="clipScenes"></div>
+  <div class="row" style="margin-top:8px">
+    <button class="btn" onclick="produce()">Produce video →</button>
+  </div>
+</div>
+
+<div class="panel hidden" id="producePanel">
+  <h2>4 · Producing</h2>
+  <p id="produceStage" class="muted"><span class="spin"></span> <span>starting…</span></p>
+  <ol id="progressList" class="hint"></ol>
+  <div id="result" class="hidden" style="margin-top:16px">
+    <video id="resultVideo" controls playsinline style="width:300px;aspect-ratio:9/16;border-radius:14px;background:#000"></video>
+    <div class="row" style="margin-top:12px"><a class="btn" id="openVideo" href="#">Open in review →</a></div>
+  </div>
+</div>
+
+<div id="picker" class="modal hidden">
+  <div class="modalbox">
+    <div class="modalhead">
+      <strong id="pickerTitle">Pick footage</strong>
+      <input id="pq" type="text" placeholder="Search the whole library…" oninput="renderGrid()">
+      <button class="btn ghost" onclick="closePicker()">Close</button>
+    </div>
+    <div class="chips" id="pchips"></div>
+    <div class="pgrid" id="pgrid"></div>
+  </div>
+</div>
+
+<script>
+let S = null, MATCH = null, DRAFT_ID = null, PRODUCED = false;
+
+// ---- step bar ----
+const STEP_PANEL = {1:'topicPanel', 2:'scriptPanel', 3:'clipPanel', 4:'producePanel'};
+function stepState(){
+  // [enabled, done] per step based on how far the workflow has progressed
+  return {
+    1:{enabled:true,            done:!!S},
+    2:{enabled:!!S,             done:!!MATCH},
+    3:{enabled:!!MATCH,         done:PRODUCED},
+    4:{enabled:!!MATCH,         done:PRODUCED},
+  };
+}
+function currentStep(){
+  if(PRODUCED) return 4;
+  if(!document.getElementById('producePanel').classList.contains('hidden')) return 4;
+  if(MATCH) return 3;
+  if(S) return 2;
+  return 1;
+}
+function updateSteps(){
+  const st = stepState(), cur = currentStep();
+  document.querySelectorAll('#stepper .step').forEach(el=>{
+    const n = +el.dataset.step, s = st[n];
+    el.classList.toggle('enabled', s.enabled);
+    el.classList.toggle('done', s.done && n!==cur);
+    el.classList.toggle('active', n===cur);
+  });
+}
+function goStep(n){
+  if(!stepState()[n].enabled) return;
+  const p = document.getElementById(STEP_PANEL[n]);
+  if(p && !p.classList.contains('hidden')) p.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+async function saveDraft(stage){
+  if(!S) return;
+  if(typeof collect === 'function' && document.querySelectorAll('#scenes textarea').length) collect();
+  const draft = {id:DRAFT_ID, stage, topic:document.getElementById('topic').value, article_url:document.getElementById('articleUrl').value,
+    aspect_ratio:document.getElementById('aspectRatio').value,
+    target:+document.getElementById('target').value, voice:document.getElementById('voice').value,
+    speed:document.getElementById('speed').value, script:S, match:MATCH};
+  const r = await fetch('/api/draft/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(draft)});
+  DRAFT_ID = (await r.json()).id;
+  const ind = document.getElementById('savedInd'); if(ind){ ind.textContent='Draft saved ✓'; setTimeout(()=>ind.textContent='',2000); }
+}
+
+async function restoreDraft(id){
+  const r = await fetch('/api/draft/'+id); if(!r.ok) return;
+  const d = await r.json(); DRAFT_ID = d.id;
+  document.getElementById('topic').value = d.topic || '';
+  document.getElementById('articleUrl').value = d.article_url || '';
+  if(d.aspect_ratio) document.getElementById('aspectRatio').value = d.aspect_ratio;
+  if(d.target) document.getElementById('target').value = d.target;
+  if(d.voice) document.getElementById('voice').value = d.voice;
+  if(d.speed){ document.getElementById('speed').value = d.speed; document.getElementById('spv').textContent = d.speed; }
+  if(d.script){ S = d.script; renderScript(); document.getElementById('scriptPanel').classList.remove('hidden'); }
+  if(d.match){ MATCH = d.match; renderClips(); document.getElementById('clipPanel').classList.remove('hidden'); }
+  PRODUCED = d.stage === 'produced' && !!d.vid;
+  updateSteps();
+}
+window.addEventListener('DOMContentLoaded', ()=>{
+  updateSteps();
+  const id = new URLSearchParams(location.search).get('draft');
+  if(id) restoreDraft(id);
+});
+
+async function writeScript(regen){
+  const topic = document.getElementById('topic').value.trim();   // blank = auto-pick
+  const article_url = document.getElementById('articleUrl').value.trim();
+  const spin = document.getElementById(regen ? 'regenSpin' : 'scriptSpin');
+  spin.classList.remove('hidden');
+  const body = {topic, target:+document.getElementById('target').value,
+    aspect_ratio:document.getElementById('aspectRatio').value};
+  if(regen) body.instruction = document.getElementById('instruction').value;
+  const r = await fetch(article_url ? '/api/article/script' : '/api/script',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(article_url ? {...body, article_url} : body)});
+  spin.classList.add('hidden');
+  if(!r.ok){ alert('Script failed'); return; }
+  S = await r.json();
+  if(!topic && S.topic) document.getElementById('topic').value = S.topic;  // show what it chose
+  MATCH = null; PRODUCED = false;
+  renderScript();
+  document.getElementById('scriptPanel').classList.remove('hidden');
+  document.getElementById('clipPanel').classList.add('hidden');
+  updateSteps();
+  saveDraft('script');
+}
+
+function renderScript(){
+  yt_title.value = S.youtube_title||''; yt_desc.value = S.youtube_description||'';
+  hashtags.value = (S.hashtags||[]).join(' ');
+  const c = document.getElementById('scenes'); c.innerHTML='';
+  S.scenes.forEach((sc,i)=>{
+    const d=document.createElement('div'); d.className='scene';
+    d.innerHTML=`<div class="n">Scene ${sc.index}${sc.hero?' · hero':''}</div>
+      <label>Narration</label><textarea rows="2" data-i="${i}" data-f="narration">${sc.narration||''}</textarea>
+      <label style="margin-top:10px">Visual</label>
+      <textarea rows="2" data-i="${i}" data-f="image_prompt">${sc.image_prompt||''}</textarea>`;
+    c.appendChild(d);
+  });
+}
+function collect(){
+  document.querySelectorAll('#scenes textarea').forEach(t=>{ S.scenes[+t.dataset.i][t.dataset.f]=t.value; });
+  S.youtube_title=yt_title.value; S.youtube_description=yt_desc.value;
+  S.hashtags=hashtags.value.split(/\s+/).filter(Boolean);
+}
+
+async function matchClips(){
+  collect();
+  document.getElementById('matchSpin').classList.remove('hidden');
+  const r = await fetch('/api/match',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({script:S})});
+  document.getElementById('matchSpin').classList.add('hidden');
+  MATCH = (await r.json()).scenes;
+  renderClips();
+  document.getElementById('clipPanel').classList.remove('hidden');
+  document.getElementById('clipPanel').scrollIntoView({behavior:'smooth'});
+  updateSteps();
+  saveDraft('clips');
+}
+
+function renderClips(){
+  const c = document.getElementById('clipScenes'); c.innerHTML='';
+  MATCH.forEach((sc,i)=>{
+    const d=document.createElement('div'); d.className='scene';
+    d.innerHTML=`<div class="n">Scene ${sc.index}</div>
+      <div class="pick">
+        <div class="thumbwrap" onclick="openPicker(${i})">
+          <video id="thumb${i}" muted loop playsinline preload="none"
+            poster="/media/libimg/${sc.chosen}" data-src="/media/lib/${sc.chosen}.mp4"
+            onmouseenter="if(!this.src)this.src=this.dataset.src;this.play()" onmouseleave="this.pause()"></video>
+        </div>
+        <div class="body">
+          <div class="muted" style="font-size:13px;margin-bottom:8px">"${sc.narration}"</div>
+          <div class="cid" id="cid${i}">${sc.chosen||'(none)'}</div>
+          <button class="btn ghost" onclick="openPicker(${i})">Change clip…</button>
+        </div>
+      </div>`;
+    c.appendChild(d);
+  });
+}
+
+// ---- visual clip picker ----
+let ALLCLIPS = [], CUR = -1, pgroup = 'suggested';
+async function loadClips(){ if(!ALLCLIPS.length) ALLCLIPS = await (await fetch('/api/clips')).json(); }
+async function openPicker(i){
+  CUR = i; await loadClips(); pgroup = 'suggested';
+  document.getElementById('pickerTitle').textContent = 'Scene '+MATCH[i].index+' — pick footage';
+  document.getElementById('pq').value = '';
+  buildChips(); renderGrid();
+  document.getElementById('picker').classList.remove('hidden');
+}
+function closePicker(){ document.getElementById('picker').classList.add('hidden'); }
+function buildChips(){
+  const groups = ['suggested','all', ...Array.from(new Set(ALLCLIPS.map(c=>c.grp)))];
+  document.getElementById('pchips').innerHTML = groups.map(g=>
+    `<span class="chip ${g===pgroup?'active':''}" onclick="pgroup='${g}';buildChips();renderGrid()">${g}</span>`).join('');
+}
+function renderGrid(){
+  const q = (document.getElementById('pq').value||'').toLowerCase().trim();
+  let list;
+  if(pgroup==='suggested'){
+    const ids=(MATCH[CUR].candidates||[]).map(c=>c.id);
+    list=ids.map(id=>ALLCLIPS.find(c=>c.id===id)).filter(Boolean);
+  } else {
+    list=ALLCLIPS.filter(c=>pgroup==='all'||c.grp===pgroup);
+  }
+  if(q) list=list.filter(c=>(c.id+' '+c.description+' '+c.grp).toLowerCase().includes(q));
+  document.getElementById('pgrid').innerHTML = list.map(c=>`
+    <div class="pcell ${c.id===MATCH[CUR].chosen?'sel':''}" onclick="selectClip('${c.id}')">
+      <div class="pthumb">
+        <span class="selbadge">✓</span>
+        <video muted loop playsinline preload="none" poster="/media/libimg/${c.id}" data-src="/media/lib/${c.id}.mp4"
+          onmouseenter="if(!this.src)this.src=this.dataset.src;this.play()" onmouseleave="this.pause()"></video>
+      </div>
+      <div class="pcd">${c.description}</div>
+    </div>`).join('') || '<p class="muted" style="padding:20px">No clips match.</p>';
+}
+function selectClip(id){
+  MATCH[CUR].chosen=id;
+  const t=document.getElementById('thumb'+CUR);
+  t.poster='/media/libimg/'+id; t.removeAttribute('src'); t.dataset.src='/media/lib/'+id+'.mp4';
+  document.getElementById('cid'+CUR).textContent=id;
+  closePicker(); saveDraft('clips');
+}
+
+async function produce(){
+  const clips={}; MATCH.forEach(sc=>{ clips[sc.index]=sc.chosen; });
+  document.getElementById('producePanel').classList.remove('hidden');
+  document.getElementById('producePanel').scrollIntoView({behavior:'smooth'});
+  updateSteps();
+  saveDraft('producing');
+  const r = await fetch('/api/produce',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({topic:S.topic, script:S, clips, draft:DRAFT_ID, article_url:document.getElementById('articleUrl').value.trim(),
+      aspect_ratio:document.getElementById('aspectRatio').value,
+      voice:document.getElementById('voice').value, tempo:document.getElementById('speed').value})});
+  poll((await r.json()).job);
+}
+async function poll(job){
+  const j = await (await fetch('/api/job/'+job)).json();
+  document.querySelector('#produceStage span:last-child').textContent = j.stage;
+  document.getElementById('progressList').innerHTML=(j.progress||[]).map(s=>`<li>${s}</li>`).join('');
+  if(j.stage==='done'){
+    PRODUCED = true; updateSteps();
+    document.querySelector('#produceStage .spin').classList.add('hidden');
+    document.getElementById('result').classList.remove('hidden');
+    document.getElementById('resultVideo').style.aspectRatio=document.getElementById('aspectRatio').value.replace(':','/');
+    document.getElementById('resultVideo').src='/media/'+j.vid+'/final.mp4';
+    document.getElementById('openVideo').href='/v/'+j.vid; return;
+  }
+  if(j.stage==='error'){ document.querySelector('#produceStage span:last-child').textContent='error: '+j.error;
+    document.querySelector('#produceStage .spin').classList.add('hidden'); return; }
+  setTimeout(()=>poll(job),1500);
+}
+</script>
+{% endblock %}

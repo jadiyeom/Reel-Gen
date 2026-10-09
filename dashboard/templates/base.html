@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Shorts Studio{% endblock %}</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:{{ brand.bg }};--surface:{{ brand.surface }};--accent:{{ brand.accent }};
+        --accent2:{{ brand.accent_2 }};--text:{{ brand.text }};--muted:{{ brand.muted }}}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;
+    min-height:100vh}
+  a{color:inherit;text-decoration:none}
+  header{display:flex;align-items:center;gap:14px;padding:22px 32px;
+    border-bottom:1px solid rgba(255,255,255,.07);position:sticky;top:0;
+    background:rgba(11,15,23,.85);backdrop-filter:blur(10px);z-index:10}
+  header .dot{width:20px;height:20px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%,var(--accent2),var(--accent));
+    box-shadow:0 0 18px color-mix(in srgb, var(--accent) 60%, transparent)}
+  header .name{font-family:'Sora';font-weight:800;font-size:22px}
+  header .muted{color:var(--muted);font-size:14px;margin-left:auto}
+  .wrap{max-width:1100px;margin:0 auto;padding:32px}
+  .btn{display:inline-flex;align-items:center;gap:10px;padding:12px 20px;border-radius:10px;
+    background:linear-gradient(120deg,var(--accent),var(--accent2));color:#0a0a0a;
+    font-weight:700;border:none;cursor:pointer;font-size:15px}
+  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.15);color:var(--text)}
+</style>
+</head>
+<body>
+<header>
+  <a href="/" style="display:flex;align-items:center;gap:14px">
+    <span class="dot"></span><span class="name">Shorts Studio</span></a>
+  <nav style="display:flex;gap:22px;margin-left:34px;font-size:15px;font-weight:600">
+    <a href="/" style="color:var(--muted)">Videos</a>
+    <a href="/create" style="color:var(--muted)">Create</a>
+    <a href="/library" style="color:var(--muted)">Library</a>
+  </nav>
+  <span class="muted">{% block subtitle %}content pipeline{% endblock %}</span>
+</header>
+<div class="wrap">{% block body %}{% endblock %}</div>
+</body>
+</html>

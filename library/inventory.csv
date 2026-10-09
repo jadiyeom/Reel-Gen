@@ -1,0 +1,7 @@
+id,group,lighting,style,description,image_prompt,motion_prompt
+ai_focused_desk_dark_001,people,dark,realism,"a person focused at a desk lit by a warm lamp","a person sitting at a desk in a dark room, face lit by a warm lamp, deep in focus, cinematic shallow depth of field","subtle head movement, lamp light gently flickering"
+ai_walking_city_002,people,light,realism,"a person walking through a bright city street","a person walking through a sunlit city street, motion blur of crowds around them, cinematic","slow forward camera push, crowd drifting past"
+ai_window_thinking_003,people,dark,realism,"a person looking out a rainy window, thoughtful","a person gazing out a rain-streaked window at night, soft reflection on their face, contemplative, cinematic","raindrops sliding down, faint breathing motion"
+ai_sunrise_silhouette_004,nature,light,realism,"a silhouette against a glowing sunrise","a lone silhouette standing against a glowing golden sunrise over hills, hopeful, cinematic wide shot","clouds drifting slowly, light blooming brighter"
+ai_abstract_light_005,abstract,dark,stylized,"abstract glowing threads of light forming a pattern","abstract glowing threads of warm light weaving into a pattern over a dark background, elegant and calm","threads gently weaving and pulsing with light"
+ai_calm_breath_006,people,light,realism,"a person breathing calmly in soft daylight","a person sitting calmly in soft daylight, eyes closed, a quiet sense of relief and clarity, cinematic","soft light slowly blooming, calm breathing motion"

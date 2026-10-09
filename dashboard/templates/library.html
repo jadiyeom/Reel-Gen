@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block subtitle %}{{ stats.total }} clips{% endblock %}
+{% block body %}
+<style>
+  .bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:22px;align-items:center}
+  .chip{padding:8px 16px;border-radius:999px;border:1px solid rgba(255,255,255,.14);
+    cursor:pointer;font-size:14px;color:var(--muted)}
+  .chip.active{background:var(--accent);color:#0a0a0a;border-color:var(--accent);font-weight:700}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:18px}
+  .clip{background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:14px;overflow:hidden;position:relative}
+  .clip .del{position:absolute;top:8px;right:8px;z-index:3;width:34px;height:34px;border-radius:50%;
+    border:none;background:rgba(0,0,0,.6);color:#fff;font-size:20px;cursor:pointer;line-height:1}
+  .clip .del:hover{background:#EF4444}
+  .clip video{width:100%;aspect-ratio:9/16;object-fit:cover;display:block;background:#000;cursor:pointer}
+  .clip .m{padding:12px}
+  .clip .id{font-size:12px;color:var(--accent);font-weight:600;word-break:break-all}
+  .clip .desc{font-size:13px;color:var(--text);margin-top:6px;line-height:1.35}
+  .clip .tags{font-size:11px;color:var(--muted);margin-top:8px}
+</style>
+
+<style>
+  .add{background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:18px 20px;margin-bottom:22px}
+  .add h3{font-family:'Sora';font-size:15px;margin-bottom:12px}
+  .add .f{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+  .add input,.add select{background:#0c1118;border:1px solid rgba(255,255,255,.12);border-radius:9px;
+    color:var(--text);padding:11px 13px;font-size:14px;font-family:inherit}
+  .add input.q{flex:1;min-width:240px}
+  .spin{display:inline-block;width:15px;height:15px;border:3px solid rgba(255,255,255,.2);
+    border-top-color:var(--accent);border-radius:50%;animation:s 1s linear infinite;vertical-align:middle}
+  @keyframes s{to{transform:rotate(360deg)}}
+  .hidden{display:none}
+</style>
+<div class="add">
+  <h3>Add clips</h3>
+  <div class="f">
+    <input class="q" id="fq" type="text" placeholder="Stock search, e.g. 'city at night' (free, Pexels)">
+    <select id="fgroup">
+      <option value="people">people</option><option value="places">places</option>
+      <option value="nature">nature</option><option value="abstract">abstract</option>
+      <option value="custom">custom</option>
+    </select>
+    <select id="fn"><option>3</option><option selected>5</option><option>8</option></select>
+    <button class="btn" onclick="fetchStock()">Fetch stock</button>
+    <span id="fSpin" class="hidden"><span class="spin"></span></span>
+  </div>
+  <div class="f">
+    <input class="q" id="gp" type="text" placeholder="AI-generate: image prompt (uses fal credit)">
+    <input id="gm" type="text" placeholder="motion (optional)" style="min-width:160px">
+    <button class="btn ghost" onclick="genClip()">Generate</button>
+    <span id="gSpin" class="hidden"><span class="spin"></span></span>
+  </div>
+</div>
+
+<div class="bar">
+  <span class="chip active" data-g="all">All ({{ stats.total }})</span>
+  {% for g in groups %}<span class="chip" data-g="{{ g }}">{{ g.replace('_',' ') }} ({{ stats.by_group[g] }})</span>{% endfor %}
+  <input id="search" type="text" placeholder="Search clips…" oninput="applyFilter()"
+    style="margin-left:auto;background:#0c1118;border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--text);padding:9px 14px;font-size:14px;min-width:220px">
+</div>
+
+{% if not clips %}
+  <p style="color:var(--muted)">No clips yet. Fetch free stock above, or run <code>python run.py fetch-library</code>.</p>
+{% endif %}
+<div class="grid" id="grid">
+  {% for c in clips %}
+  <div class="clip" data-g="{{ c.grp }}" data-id="{{ c.id }}"
+       data-search="{{ (c.id ~ ' ' ~ c.description ~ ' ' ~ c.grp)|lower }}">
+    <button class="del" title="Delete clip" onclick="delClip(this)">&times;</button>
+    <video poster="/media/libimg/{{ c.id }}" muted loop preload="none" playsinline
+           data-src="/media/lib/{{ c.id }}.mp4"
+           onmouseenter="if(!this.src){this.src=this.dataset.src;}this.play()"
+           onmouseleave="this.pause()"></video>
+    <div class="m">
+      <div class="id">{{ c.id }}</div>
+      <div class="desc" onclick="editDesc(this)" title="Click to edit">{{ c.description }}</div>
+      <div class="tags">{{ c.lighting }} · used {{ c.times_used }}×</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<script>
+async function pollJob(job, spinId, label){
+  const r = await fetch('/api/job/'+job); const j = await r.json();
+  if(j.stage === 'done'){ location.reload(); return; }
+  if(j.stage === 'error'){ document.getElementById(spinId).classList.add('hidden'); alert(label+' failed: '+j.error); return; }
+  setTimeout(()=>pollJob(job, spinId, label), 1500);
+}
+async function fetchStock(){
+  const query = document.getElementById('fq').value.trim();
+  if(!query) return;
+  document.getElementById('fSpin').classList.remove('hidden');
+  const r = await fetch('/api/library/fetch',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({query, group:document.getElementById('fgroup').value, n:+document.getElementById('fn').value})});
+  pollJob((await r.json()).job, 'fSpin', 'Fetch');
+}
+async function genClip(){
+  const prompt = document.getElementById('gp').value.trim();
+  if(!prompt) return;
+  if(!confirm('AI-generate this clip? Uses fal credit (~$0.18).')) return;
+  document.getElementById('gSpin').classList.remove('hidden');
+  const r = await fetch('/api/library/generate',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({prompt, motion:document.getElementById('gm').value})});
+  pollJob((await r.json()).job, 'gSpin', 'Generate');
+}
+async function delClip(btn){
+  const card = btn.closest('.clip');
+  const id = card.dataset.id;
+  if(!confirm('Delete '+id+'? This removes the clip permanently.')) return;
+  const r = await fetch('/api/clip/delete',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({id})});
+  if((await r.json()).ok){ card.remove(); } else { alert('Delete failed'); }
+}
+let activeGroup = 'all';
+function applyFilter(){
+  const q = (document.getElementById('search').value || '').toLowerCase().trim();
+  document.querySelectorAll('#grid .clip').forEach(el => {
+    const okG = activeGroup === 'all' || el.dataset.g === activeGroup;
+    const okS = !q || (el.dataset.search || '').includes(q);
+    el.style.display = (okG && okS) ? '' : 'none';
+  });
+}
+document.querySelectorAll('.chip').forEach(ch => ch.onclick = () => {
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  ch.classList.add('active'); activeGroup = ch.dataset.g; applyFilter();
+});
+async function editDesc(el){
+  const card = el.closest('.clip'); const id = card.dataset.id;
+  const cur = el.textContent.trim();
+  const desc = prompt('Edit description (affects matching):', cur);
+  if(desc === null || desc.trim() === cur) return;
+  const r = await fetch('/api/clip/update',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({id, description:desc.trim()})});
+  if((await r.json()).ok){ el.textContent = desc.trim(); card.dataset.search = (id+' '+desc+' '+card.dataset.g).toLowerCase(); }
+  else alert('Update failed');
+}
+</script>
+{% endblock %}

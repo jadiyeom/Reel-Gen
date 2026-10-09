@@ -1,0 +1,19 @@
+# Core pipeline (stages 1-5 + dashboard). No GPU needed for these.
+openai>=1.40
+python-dotenv>=1.0
+pydantic>=2.6
+jinja2>=3.1
+playwright>=1.44
+faster-whisper>=1.0
+kokoro>=0.9.4
+google-api-python-client>=2.160
+google-auth-oauthlib>=1.2
+google-auth-httplib2>=0.2
+flask>=3.0
+fal-client>=0.5
+requests>=2.31
+boto3>=1.35
+pillow>=10.0
+beautifulsoup4>=4.12
+trafilatura>=1.9
+imageio-ffmpeg>=0.5

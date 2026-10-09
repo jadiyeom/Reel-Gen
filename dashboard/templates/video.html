@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}{{ s.topic }} — Shorts Studio{% endblock %}
+{% block subtitle %}{{ vid }}{% endblock %}
+{% block body %}
+<style>
+  .layout{display:grid;grid-template-columns:{{ 'minmax(0, 560px)' if aspect_ratio == '16:9' else '340px' }} 1fr;gap:32px;align-items:start}
+  video.player{width:{{ 'min(100%, 560px)' if aspect_ratio == '16:9' else '340px' }};aspect-ratio:{{ aspect_ratio.replace(':','/') }};border-radius:18px;background:#000;border:1px solid rgba(255,255,255,.08)}
+  .actions{display:flex;gap:12px;margin-top:16px;flex-wrap:wrap}
+  h2{font-family:'Sora';font-size:22px;margin-bottom:6px}
+  .topic{color:var(--muted);margin-bottom:22px}
+  .block{background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:18px 20px;margin-bottom:16px;position:relative}
+  .block h3{font-family:'Sora';font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+  .block p{line-height:1.5;white-space:pre-wrap;font-size:15px}
+  .copy{position:absolute;top:14px;right:14px;font-size:12px;padding:6px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:transparent;color:var(--text);cursor:pointer}
+  .copy:hover{border-color:var(--accent);color:var(--accent)}
+  .tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+  .tag{background:rgba(245,166,35,.12);color:var(--accent);padding:6px 12px;border-radius:999px;font-size:13px}
+  .scene{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:14px}
+  .scene .n{color:var(--accent);font-weight:700;flex:none;width:26px}
+  a.back{color:var(--muted);font-size:14px;display:inline-block;margin-bottom:18px}
+  select,input[type=number]{background:#0c1118;border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--text);padding:10px 12px;font-size:14px;width:100%;font-family:inherit}
+  .mlabel{font-size:12px;color:var(--muted);margin:12px 0 6px}
+  .spin{display:inline-block;width:15px;height:15px;border:3px solid rgba(255,255,255,.2);border-top-color:var(--accent);border-radius:50%;animation:s 1s linear infinite;vertical-align:middle}
+  @keyframes s{to{transform:rotate(360deg)}}
+  .hidden{display:none}
+  .del{background:transparent;border:1px solid rgba(239,68,68,.5);color:#EF4444}
+</style>
+
+<a class="back" href="/">← all videos</a>
+<div class="layout">
+  <div>
+    <video class="player" id="player" src="/media/{{ vid }}/final.mp4" controls playsinline></video>
+    <div class="actions">
+      <a class="btn" href="/download/{{ vid }}">↓ Download</a>
+      <button class="btn del" onclick="delVideo()">Delete</button>
+    </div>
+
+    <div class="block" style="margin-top:18px">
+      <h3>Music</h3>
+      <select id="music" onchange="loadTrack()">
+        <option value="">(no music)</option>
+        {% for m in music %}<option value="{{ m }}" {% if m == current_music %}selected{% endif %}>{{ m }}</option>{% endfor %}
+      </select>
+      <div id="waveform" style="margin-top:12px;min-height:64px;border:1px solid rgba(255,255,255,.08);border-radius:8px"></div>
+      <div class="mlabel">Click the waveform to choose where the music starts.</div>
+      <div class="mlabel">Volume: <span id="volval">{{ '%.2f' % (current_volume or 0.16) }}</span></div>
+      <input type="range" id="vol" min="0" max="0.5" step="0.01" value="{{ '%.2f' % (current_volume or 0.16) }}"
+             oninput="document.getElementById('volval').textContent=this.value; if(window.ws) ws.setVolume(+this.value)" style="width:100%">
+      <div class="actions" style="margin-top:6px">
+        <button class="btn" id="prevBtn" onclick="previewToggle()">▶ Preview with video</button>
+        <button class="btn" onclick="saveMusic()">Save</button>
+        <span id="mspin" class="hidden"><span class="spin"></span></span>
+      </div>
+      <div class="mlabel">Add a track</div>
+      <input type="file" id="mfile" accept="audio/*" onchange="uploadMusic()">
+    </div>
+  </div>
+
+  <div>
+    <h2>{{ s.youtube_title }}</h2>
+    <div class="topic">{{ s.topic }}</div>
+
+    {% macro copyblock(label, text) %}
+    <div class="block"><h3>{{ label }}</h3><button class="copy" onclick="copyText(this)">Copy</button>
+      <p class="val">{{ text }}</p></div>
+    {% endmacro %}
+
+    {{ copyblock("YouTube title", s.youtube_title) }}
+    {{ copyblock("YouTube description", s.youtube_description) }}
+    {{ copyblock("TikTok caption", s.tiktok_caption) }}
+    {{ copyblock("X / Twitter", s.x_caption) }}
+
+    <div class="block"><h3>Hashtags</h3><button class="copy" onclick="copyText(this)">Copy</button>
+      <p class="val">{% for h in s.hashtags %}#{{ h }} {% endfor %}</p>
+      <div class="tags">{% for h in s.hashtags %}<span class="tag">#{{ h }}</span>{% endfor %}</div>
+    </div>
+
+    <div class="block"><h3>Script</h3>
+      {% for sc in s.scenes %}
+      <div class="scene"><span class="n">{{ sc.index }}</span><span>{{ sc.narration }}</span>{% if sc.scene_type != 'blank' %}<button class="btn ghost" onclick="regenerateScene({{ sc.index }})">Regenerate illustration</button>{% endif %}</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+<script>
+async function regenerateScene(index){
+  if(!confirm('Regenerate this illustration and update its scene in the current video?')) return;
+  const r=await fetch(`/api/video/{{ vid }}/scene/${index}/regenerate`,{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+  const d=await r.json(); if(!r.ok) alert(d.error||'Regeneration failed'); else { alert('Illustration regenerated and video updated.'); location.reload(); }
+}
+</script>
+
+<script src="https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.min.js"></script>
+<script>
+const VID = "{{ vid }}";
+window.ws = null; let previewing = false, startOffset = 0;
+function copyText(btn){
+  const el = btn.closest('.block').querySelector('.val');
+  navigator.clipboard.writeText(el.innerText.trim()).then(()=>{
+    const o=btn.innerText; btn.innerText='Copied'; setTimeout(()=>btn.innerText=o,1200);
+  });
+}
+function loadTrack(){
+  const t = document.getElementById('music').value;
+  if(window.ws){ try{ws.destroy()}catch(e){} window.ws=null; }
+  startOffset = 0;
+  const wf = document.getElementById('waveform'); wf.innerHTML='';
+  if(!t) return;
+  window.ws = WaveSurfer.create({container:'#waveform', url:'/media/music/'+encodeURIComponent(t),
+    height:64, waveColor:'rgba(245,166,35,.45)', progressColor:'#F5A623', cursorColor:'#fff', normalize:true});
+  ws.setVolume(+document.getElementById('vol').value);
+  ws.on('interaction', (time)=>{ startOffset = (typeof time==='number') ? time : ws.getCurrentTime(); });
+}
+function stopPreview(){
+  const p=document.getElementById('player'); p.pause(); p.onended=null;
+  if(window.ws){ try{ws.pause()}catch(e){} }
+  previewing=false; const b=document.getElementById('prevBtn'); if(b) b.textContent='▶ Preview with video';
+}
+function previewToggle(){
+  if(!document.getElementById('music').value){ alert('Pick a track first'); return; }
+  if(previewing){ stopPreview(); return; }
+  const p=document.getElementById('player');
+  p.src='/media/preview/'+VID+'?t='+Date.now();
+  p.onloadeddata=()=>{ p.currentTime=0; p.play();
+    if(window.ws){ ws.setVolume(+document.getElementById('vol').value); try{ws.setTime(startOffset)}catch(e){} ws.play(); } };
+  p.onended=stopPreview;
+  previewing=true; document.getElementById('prevBtn').textContent='⏸ Stop preview';
+}
+async function saveMusic(){
+  stopPreview();
+  document.getElementById('mspin').classList.remove('hidden');
+  const r = await fetch('/api/remix',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({vid:VID, music:document.getElementById('music').value,
+      volume:+document.getElementById('vol').value, start:startOffset})});
+  document.getElementById('mspin').classList.add('hidden');
+  if(r.ok){ const p=document.getElementById('player'); p.onloadeddata=null; p.src='/media/'+VID+'/final.mp4?t='+Date.now(); }
+  else alert('Save failed');
+}
+window.addEventListener('DOMContentLoaded', loadTrack);
+async function uploadMusic(){
+  const f = document.getElementById('mfile').files[0]; if(!f) return;
+  const fd = new FormData(); fd.append('file', f);
+  const r = await fetch('/api/upload-music',{method:'POST',body:fd});
+  if(r.ok) location.reload(); else alert('Upload failed');
+}
+async function delVideo(){
+  if(!confirm('Delete this video permanently?')) return;
+  const r = await fetch('/api/video/delete',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({vid:VID})});
+  if(r.ok) location.href='/'; else alert('Delete failed');
+}
+</script>
+{% endblock %}
