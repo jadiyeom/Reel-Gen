@@ -22,6 +22,37 @@ h1{max-width:650px;font-size:clamp(47px,6.5vw,78px);line-height:.98;letter-spaci
 .timeline{grid-column:1/-1;background:#10130f;border:1px solid #30372b;padding:12px;border-radius:13px}.timehead{display:flex;justify-content:space-between;color:#9da797;font-size:9px;margin-bottom:9px}.tracks{display:flex;gap:4px}.track{height:20px;border-radius:4px;flex:1;background:#45523a}.track:nth-child(2n){background:#617445}.track:first-child{background:var(--lime)}.audio{height:15px;margin-top:5px;background:repeating-linear-gradient(90deg,#333b2f 0 2px,#171b15 2px 6px);border-radius:4px}
 .section{padding:68px 0}.sectionhead{display:flex;justify-content:space-between;align-items:end;gap:25px;margin-bottom:26px}.kicker{display:block}.section h2{font-size:clamp(30px,4vw,43px);line-height:1.05;letter-spacing:-.065em;margin:10px 0 0}.intro{max-width:440px;color:var(--muted);font-size:13px}
 .workflow{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}.wf{border:1px solid var(--line);border-radius:17px;background:linear-gradient(150deg,#151914,#10120f);padding:20px;min-height:186px}.icon{width:36px;height:36px;border:1px solid #414d35;border-radius:11px;display:grid;place-items:center;color:var(--lime);background:#c9f36b0d;margin-bottom:24px}.icon svg{width:19px;height:19px}.wf h3{font-size:15px;margin:0 0 7px;letter-spacing:-.04em}.wf p{font-size:11px;line-height:1.65;color:#9ea898;margin:0}
+
+.demo-section{border-top:1px solid #20241e;background:linear-gradient(180deg,#0d100c,#0b0d0b)}
+.demo-layout{display:grid;grid-template-columns:1.02fr .98fr;gap:22px;align-items:start}
+.demo-video-card,.demo-story-card{border:1px solid #2b3228;background:#111410;border-radius:18px;overflow:hidden}
+.demo-video-frame{aspect-ratio:9/16;max-height:620px;background:#080a08}
+.demo-video-frame iframe{display:block;width:100%;height:100%;min-height:460px;border:0}
+.demo-video-meta{padding:16px 18px 18px}
+.demo-video-meta h3{font-size:17px;line-height:1.3;letter-spacing:-.04em;margin:7px 0}
+.demo-video-meta p{color:var(--muted);font-size:12px;margin:0 0 13px}
+.demo-tags{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}
+.demo-tag{border:1px solid #35402c;border-radius:999px;padding:5px 8px;color:#c8d4bd;font-size:9px}
+.demo-story-card{padding:18px}
+.demo-story-head{display:flex;justify-content:space-between;align-items:start;gap:12px;margin-bottom:15px}
+.demo-story-head h3{font-size:17px;letter-spacing:-.04em;margin:0 0 5px}
+.demo-story-head p{font-size:11px;color:var(--muted);margin:0}
+.demo-scenes{display:flex;flex-direction:column;gap:8px}
+.demo-scene{border:1px solid #2b3228;border-radius:11px;background:#151813;padding:12px}
+.demo-scene-top{display:flex;align-items:center;gap:9px;margin-bottom:7px}
+.demo-scene-num{width:25px;height:25px;display:grid;place-items:center;background:#c9f36b16;color:var(--lime);border-radius:8px;font-size:9px;font-weight:850;flex:none}
+.demo-scene-title{font-size:11px;font-weight:800}
+.demo-scene-type{margin-left:auto;color:#899483;font-size:9px;text-transform:uppercase}
+.demo-scene p{font-size:11px;line-height:1.6;color:#c5cec0;margin:0}
+.demo-scene .visual-note{margin-top:8px;color:#879580;font-size:10px;line-height:1.55}
+.demo-json-details{margin-top:13px;border:1px solid #2b3228;border-radius:11px;overflow:hidden}
+.demo-json-details summary{cursor:pointer;padding:12px 14px;font-size:11px;font-weight:750;color:#d9e4d0}
+.demo-json-details pre{max-height:390px;border-top:1px solid #252b22}
+.demo-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}
+.demo-copy{font-size:10px;color:#879181;line-height:1.6;margin-top:12px}
+@media(max-width:900px){.demo-layout{grid-template-columns:1fr}.demo-video-card{max-width:460px;width:100%;margin-inline:auto}.demo-video-frame iframe{min-height:600px}}
+@media(max-width:620px){.demo-story-card{padding:12px}.demo-video-frame iframe{min-height:540px}.demo-story-head{flex-direction:column}}
+
 .studio{border-top:1px solid #20241e;border-bottom:1px solid #20241e;background:radial-gradient(ellipse at 80% 0%,#c9f36b09,transparent 38%)}.studio-layout{display:grid;grid-template-columns:.74fr 1.26fr;gap:34px;align-items:start}.sidetext{position:sticky;top:24px}.sidetext h2{font-size:42px;line-height:1.02;letter-spacing:-.065em;margin:10px 0 16px}.sidetext p{color:var(--muted);font-size:13px;line-height:1.75}.notice{margin-top:20px;padding:14px 15px;border:1px solid #3c4931;background:#c9f36b09;border-radius:12px;color:#c6d0be;font-size:11px;line-height:1.65}.notice b{color:var(--lime)}
 .formcard{border:1px solid #2b3228;background:#111410;border-radius:20px;padding:22px}.formhead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:19px}.formhead h3{font-size:16px;margin:0;letter-spacing:-.04em}.pill{border:1px solid #3c4832;border-radius:999px;padding:5px 9px;font-size:9px;color:var(--lime);font-weight:800;white-space:nowrap}
 .fieldgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.field{min-width:0;margin-bottom:14px}label{display:block;color:#cbd2c5;font-size:10px;font-weight:750;margin-bottom:7px}input,textarea,select{width:100%;border:1px solid #30372d;border-radius:9px;background:#0b0d0b;color:var(--text);padding:11px 12px;font-size:12px;outline:none}input::placeholder,textarea::placeholder{color:#717b6d}input:focus,textarea:focus,select:focus{border-color:#778c50}textarea{resize:vertical;line-height:1.5;min-height:75px}.helper{font-size:10px;color:#828d7b;margin-top:6px;line-height:1.45}
@@ -35,14 +66,14 @@ h1{max-width:650px;font-size:clamp(47px,6.5vw,78px);line-height:.98;letter-spaci
 <body>
 <header class="shell nav">
 <a class="brand" href="#" aria-label="ReelGen home"><span class="mark"><svg viewBox="0 0 24 24" fill="none"><path d="M5 7.5h4.5v9H5zM14.5 5h4.5v14h-4.5zM9.5 10h5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>ReelGen</a>
-<nav class="navlinks" aria-label="Main navigation"><a href="#workflow">Workflow</a><a href="#studio">Storyboard builder</a><a href="#local-render">Render locally</a></nav>
+<nav class="navlinks" aria-label="Main navigation"><a href="#workflow">Workflow</a><a href="#demo">Demo</a><a href="#studio">Storyboard builder</a><a href="#local-render">Render locally</a></nav>
 <div class="navactions"><a class="btn ghost" href="https://github.com/jadiyeom/Reel-Gen" target="_blank" rel="noreferrer">View source ↗</a><a class="btn primary" href="#studio">Build a storyboard ↓</a></div>
 </header>
 <main>
 <section class="shell hero">
 <div><div class="eyebrow">Your AI video production workspace</div><h1>From a sharp idea to a video people <span class="accent">finish.</span></h1>
 <p>Turn a topic or article into a thoughtful scene-by-scene plan. Shape the narration, direct the visuals, and take an export-ready storyboard into ReelGen's local rendering pipeline.</p>
-<div class="hero-actions"><a class="btn primary" href="#studio">Build your storyboard <svg viewBox="0 0 20 20" fill="none"><path d="M4 10h12m-5-5 5 5-5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="btn ghost" href="#workflow">Explore the workflow</a></div>
+<div class="hero-actions"><a class="btn primary" href="#studio">Build your storyboard <svg viewBox="0 0 20 20" fill="none"><path d="M4 10h12m-5-5 5 5-5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="btn ghost" href="#demo">Watch the demo</a><a class="btn ghost" href="#workflow">Explore the workflow</a></div>
 <div class="micro"><b>✓</b> Browser-based planning · No API key needed for this builder</div></div>
 <div class="preview" aria-label="Illustration of the ReelGen video workflow"><div class="previewtop"><span>REELGEN / STUDIO PREVIEW</span><span class="ready">STORYBOARD READY</span></div>
 <div class="previewgrid"><div class="frame"><svg viewBox="0 0 260 360" fill="none" aria-hidden="true"><circle cx="130" cy="95" r="58" stroke="#C9F36B" stroke-opacity=".32"/><circle cx="130" cy="95" r="38" stroke="#C9F36B" stroke-opacity=".65" stroke-width="1.5"/><circle cx="130" cy="95" r="8" fill="#C9F36B"/><path d="M130 137v63m0-42-42 35m42-35 43 24m-43 18-28 45m28-45 31 43" stroke="#E6EBD9" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M41 220h178M58 241h144M78 262h104" stroke="#69755B" stroke-width="1.5" stroke-linecap="round"/><path d="M34 100c19-35 36-50 62-55M226 102c-18-36-39-52-62-56" stroke="#C9F36B" stroke-opacity=".3" stroke-width="1.5" stroke-dasharray="3 6"/><circle cx="54" cy="72" r="4" fill="#EFAA72"/><circle cx="209" cy="75" r="3" fill="#C9F36B"/></svg><div class="frametxt"><small>SCENE 01 · THE HOOK</small>Your first frame should earn the next five seconds.</div></div>
@@ -56,6 +87,24 @@ h1{max-width:650px;font-size:clamp(47px,6.5vw,78px);line-height:.98;letter-spaci
 <article class="wf"><div class="icon"><svg viewBox="0 0 24 24" fill="none"><path d="M4 10v4m4-8v12m4-15v18m4-13v8m4-11v14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div><h3>03 · Voice & captions</h3><p>Use the local pipeline for narration, timed captions, pacing, and music under the voice.</p></article>
 <article class="wf"><div class="icon"><svg viewBox="0 0 24 24" fill="none"><path d="M4 6.5h16v11H4zM9 21h6m-3-3.5V21m-3-10 6 2.5-6 2.5z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div><h3>04 · Render & review</h3><p>Assemble an MP4, review it, refine details, then prepare platform-specific copy.</p></article>
 </div></section>
+
+<section class="demo-section section" id="demo"><div class="shell">
+<div class="sectionhead"><div><div class="kicker">Real example · fixed demo</div><h2>Watch a ReelGen video.<br>Explore the storyboard behind it.</h2></div><p class="intro">This is a real published short, paired with the exact storyboard supplied for it. Browse the scene-by-scene narration and visual direction, or inspect and download the complete JSON.</p></div>
+<div class="demo-layout">
+<article class="demo-video-card">
+<div class="demo-video-frame"><iframe src="https://www.youtube-nocookie.com/embed/QADlfg95Dyk?rel=0" title="ReelGen demo — Did AI Just Make Mathematicians Obsolete?" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>
+<div class="demo-video-meta"><div class="kicker">Published short</div><h3>Did AI Just Make Mathematicians Obsolete?</h3><p>Example topic: OpenAI's mathematics advisory group and the limits of AI-generated research claims.</p><a class="btn ghost" href="https://www.youtube.com/shorts/QADlfg95Dyk" target="_blank" rel="noreferrer">Watch on YouTube ↗</a>
+<div class="demo-tags"><span class="demo-tag">8 scene beats</span><span class="demo-tag">Narration + visual direction</span><span class="demo-tag">JSON storyboard</span></div></div>
+</article>
+<div class="demo-story-card">
+<div class="demo-story-head"><div><h3>storyboard.json</h3><p>A fixed, read-only example from this video—not the editable blank template.</p></div><span class="pill">SAMPLE</span></div>
+<div id="demoSceneList" class="demo-scenes" aria-label="Demo storyboard scenes"></div>
+<details class="demo-json-details"><summary>View full storyboard.json</summary><pre id="demoJsonPreview" aria-label="Full demo storyboard JSON"></pre></details>
+<div class="demo-actions"><button class="btn primary" id="downloadDemoJson" type="button">Download demo JSON ↓</button><a class="btn ghost" href="#studio">Build your own storyboard ↗</a></div>
+<p class="demo-copy">The demo is intentionally fixed so visitors can understand the complete workflow before creating their own storyboard. Use the builder below to make a new, editable plan.</p>
+</div>
+</div></div></section>
+
 <section class="studio section" id="studio"><div class="shell studio-layout">
 <div class="sidetext"><div class="kicker">Storyboard builder</div><h2>Make the plan yours.</h2><p>Start with a topic, then edit the voiceover and visual direction scene by scene. Export a JSON storyboard that follows ReelGen's external-storyboard format.</p><div class="notice"><b>Hosted mode, clearly scoped.</b> This Vercel page is a lightweight storyboard builder. It does not call an AI provider, render MP4s, or publish to social accounts. Those steps remain in the local Python app, where your keys and media can stay on your machine.</div><p style="font-size:11px;margin-top:17px">Already have the repo? See the <a href="https://github.com/jadiyeom/Reel-Gen#quickstart" target="_blank" rel="noreferrer" style="color:var(--lime);text-decoration:underline;text-underline-offset:3px">local quickstart ↗</a> to run the full pipeline.</p></div>
 <div class="formcard"><div class="formhead"><h3>Production brief</h3><span class="pill">EXPORTABLE JSON</span></div>
@@ -150,6 +199,50 @@ el("copyCommand").addEventListener("click",async()=>{
  try{await navigator.clipboard.writeText(command);toast("Render command copied.")}catch{toast("Clipboard unavailable; copy the command shown on the page.")}
 });
 renderScenes();
+
+const demoStoryboard = {
+  "source_url": "https://openai.com/index/advisory-group-on-mathematics-and-ai/",
+  "title": "Did AI just make mathematicians obsolete?",
+  "slug": "openai-math-ai-advisory",
+  "youtube_title": "Did AI Just Make Mathematicians Obsolete?",
+  "youtube_description": "OpenAI says its new internal model has solved over 100 long-standing math problems. The company has formed an independent mathematics advisory group, with a defined role and limits.",
+  "tiktok_caption": "Did AI just make mathematicians obsolete? OpenAI says its model solved over 100 long-standing math problems.",
+  "x_caption": "OpenAI's mathematics advisory group is meant to review results and engage the broader community—but its remit has a boundary.",
+  "hashtags": ["AI", "Mathematics", "Research", "OpenAI"],
+  "scenes": [
+    {"index":1,"scene_type":"image","narration":"Did AI just make mathematicians obsolete? OpenAI says its model solved over a hundred long-standing math problems. Now the company is asking mathematicians what comes next.","image":"images/scene-01-hook.png","visual_direction":"A tiny human mathematician faces an enormous abstract thinking machine beside a mountain of blank proof pages; the human remains present and curious."},
+    {"index":2,"scene_type":"image","narration":"The promise reaches far beyond mathematics. But speed alone cannot tell us what a result means.","image":"images/scene-02.png","visual_direction":"A mathematician opens a door and a cascade of abstract discoveries flows toward science, medicine, and engineering."},
+    {"index":3,"scene_type":"image","narration":"A benchmark cannot decide how important a result is—or how it should be shared.","image":"images/scene-03.png","visual_direction":"A magnifying glass examines a delicate proof tower while a tiny benchmark podium sits nearby."},
+    {"index":4,"scene_type":"blank","narration":"","visual_direction":"Brief warm off-white pause before introducing the advisory group."},
+    {"index":5,"scene_type":"image","narration":"So OpenAI says an independent group of mathematicians will review emerging results, guide how they are shared, and advise on research standards.","image":"images/scene-04.png","visual_direction":"A small independent group of mathematicians on a bridge between a research tower and the wider community."},
+    {"index":6,"scene_type":"image","narration":"The group can offer unrequested advice, criticize OpenAI publicly, and change its own membership. Members will not be paid by OpenAI.","image":"images/scene-05.png","visual_direction":"Mathematicians speak freely through a large open megaphone while a distant company tower watches."},
+    {"index":7,"scene_type":"image","narration":"There is a clear limit: the group will not advise on the pace of OpenAI's internal math work.","image":"images/scene-06.png","visual_direction":"An advisory group stands outside a walled research tower; the internal machine continues at its own pace."},
+    {"index":8,"scene_type":"image","narration":"This is a first step. The test is whether mathematicians shape how AI supports research and learning.","image":"images/scene-07.png","visual_direction":"Researchers lead a modest AI tool toward an open notebook as a wider community gathers around."}
+  ]
+};
+function renderDemoStoryboard(){
+ const list=document.getElementById("demoSceneList");
+ demoStoryboard.scenes.forEach(scene=>{
+  const card=document.createElement("article");card.className="demo-scene";
+  const head=document.createElement("div");head.className="demo-scene-top";
+  const num=document.createElement("span");num.className="demo-scene-num";num.textContent=String(scene.index).padStart(2,"0");
+  const title=document.createElement("span");title.className="demo-scene-title";title.textContent=scene.index===1?"The hook":scene.index===4?"Transition":scene.index===8?"The takeaway":"Scene beat";
+  const type=document.createElement("span");type.className="demo-scene-type";type.textContent=scene.scene_type;
+  head.append(num,title,type);card.append(head);
+  const narration=document.createElement("p");narration.textContent=scene.narration||"Silent visual pause — no narration.";
+  card.append(narration);
+  const visual=document.createElement("p");visual.className="visual-note";visual.textContent="Visual direction: "+scene.visual_direction;
+  card.append(visual);list.append(card);
+ });
+ document.getElementById("demoJsonPreview").textContent=JSON.stringify(demoStoryboard,null,2);
+}
+document.getElementById("downloadDemoJson").addEventListener("click",()=>{
+ const blob=new Blob([JSON.stringify(demoStoryboard,null,2)+"\n"],{type:"application/json;charset=utf-8"});
+ const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="openai-math-ai-advisory-storyboard.json";
+ document.body.append(a);a.click();a.remove();URL.revokeObjectURL(url);
+});
+renderDemoStoryboard();
+
 </script>
 </body>
 </html>
