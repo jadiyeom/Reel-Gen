@@ -30,13 +30,15 @@ The full Python pipeline remains available locally. A truly hosted render servic
 
 ## Local upload, render, and publish dashboard
 
-Run ReelGen locally (the renderer is not run on Vercel):
+Run ReelGen locally (the renderer is not run on Vercel). On Windows, launch it with the project’s virtual-environment interpreter so the dashboard uses the same packages as your voice test:
 
-```bash
-python run.py serve
+```powershell
+.\.venv\Scripts\python.exe run.py serve
 ```
 
-Open [http://127.0.0.1:5000/external](http://127.0.0.1:5000/external). Upload your `script.json` and a ZIP containing its scene PNG/JPG/WEBP files, select the aspect ratio, and choose **Validate & render video**. The dashboard checks the storyboard and image archive, runs the existing external-asset pipeline in a background job, and shows the MP4 and platform copy when complete.
+On macOS/Linux, with `.venv` activated, run `python run.py serve`.
+
+Open [http://127.0.0.1:5000/external](http://127.0.0.1:5000/external). Upload your `script.json` and a ZIP containing its scene PNG/JPG/WEBP files, select the aspect ratio, and choose **Validate & render video**. The script should include a source URL (`source_url` or `article_url`), or enter it in the form. The ZIP can contain an `images/` folder, but image filenames must be unique. The dashboard validates the storyboard/images, runs the existing external-asset pipeline in a background job, then shows an MP4 preview and platform copy.
 
 From the same page, review the render, select YouTube Shorts, Instagram Reels, Facebook Reels, and/or X, then confirm **Publish to selected accounts**. Account authorization is a one-time setup; buttons are provided for YouTube, Facebook, X, and Google Drive staging. Instagram additionally requires `INSTAGRAM_ACCESS_TOKEN` and `INSTAGRAM_BUSINESS_ACCOUNT_ID` in the local `.env`. Credentials are not displayed in the UI. YouTube visibility is selectable; other platforms follow their API/account defaults. Already-published platforms are skipped to reduce accidental duplicates. TikTok posting is not implemented in the current publisher, but its caption is shown for manual upload.
 
@@ -47,7 +49,7 @@ Keep the dashboard bound to localhost. This UI is intended for your own computer
 - **Topic → finished video**, end to end, in one command.
 - **Two visual modes:** AI generation (fal Flux + Wan) and/or free stock footage (Pexels/Pixabay).
 - **Reusable clip library** with semantic matching — reuse a good shot across videos instead of paying to regenerate it.
-- **AI voiceover** (OpenAI `gpt-4o-mini-tts`) with a tunable, punchy delivery.
+- **Local Kokoro voiceover by default** (`af_heart`); OpenAI TTS is optional.
 - **Word-by-word karaoke captions** auto-aligned with `faster-whisper`.
 - **Music bed** with automatic ducking under the voice.
 - **Optional watermark** (your logo + disclaimer) and an **optional branded outro / end card**.
@@ -63,7 +65,7 @@ Keep the dashboard bound to localhost. This UI is intended for your own computer
 topic ─▶ script (OpenAI, structured JSON)
       ─▶ visuals:  match clip library ──hit──▶ reuse clip
                                      └─miss─▶ generate (Flux image ─▶ Wan motion) ─▶ add to library
-      ─▶ voiceover (gpt-4o-mini-tts)
+      ─▶ voiceover (local Kokoro by default; optional OpenAI TTS)
       ─▶ captions (faster-whisper, word-level)
       ─▶ assemble (ffmpeg): Ken Burns / motion + music + watermark + outro
       ─▶ output/{date}-{slug}/final.mp4  +  per-platform titles/descriptions/hashtags
@@ -117,6 +119,36 @@ Video format defaults to portrait 9:16. Select `--aspect-ratio 16:9` for a 1920�
 
 On Windows you can also double-click **`start.bat`** to launch the dashboard and **`stop.bat`** to shut it down.
 
+### Windows: Kokoro and dashboard troubleshooting
+
+Use commands from the repository root (the folder containing `run.py`). For this project, the reliable dashboard launch command is:
+
+```powershell
+.\.venv\Scripts\python.exe run.py serve
+```
+
+Using a different Python interpreter can make a working Kokoro install appear to be missing. To check that Kokoro imports in the same environment:
+
+```powershell
+.\.venv\Scripts\python.exe -c "import sys; print(sys.executable); import kokoro; from kokoro import KPipeline; from kokoro.pipeline import ALIASES, LANG_CODES; print('Kokoro imports OK')"
+```
+
+If that check reports that `kokoro` is missing, install it into the project environment—not a system Python:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install "kokoro>=0.9.4"
+```
+
+The default voice settings are `TTS_BACKEND=kokoro`, `KOKORO_VOICE=af_heart`, `KOKORO_SPEED=1.0`, and `KOKORO_LANG=en-us`. You can set or override them in your local `.env`. The first speech run may load/download model assets and take longer than subsequent runs.
+
+To test speech separately from the dashboard:
+
+```powershell
+.\.venv\Scripts\python.exe -c "from pathlib import Path; from pipeline.kokoro_tts import generate_speech; d=generate_speech('This is a quick test of the local Kokoro voice.', Path('output/kokoro-test.wav'), 'af_heart', 1.0, 'en-us', 'hexgrad/Kokoro-82M'); print(f'Generated {d:.2f} seconds of audio')"
+```
+
+If rendering appears stuck, check the terminal running the dashboard for the actual error before clicking **Validate & render video** again. A successful Kokoro import test only checks the environment; the speech test confirms it can generate audio.
+
 ### The local review dashboard
 
 `python run.py serve` opens a local web app where you can:
@@ -157,7 +189,11 @@ Everything is environment-driven — see [`.env.example`](.env.example) for the 
 | `ANIMATE` | `none` | `none` (free Ken Burns), `all`, or `N` |
 | `CONTENT_NICHE` | – | Focus the writer (e.g. `personal finance`) |
 | `SCRIPT_PROMPT` | – | Swap in a custom writer preset from `prompts/presets/` |
-| `TTS_VOICE` | `onyx` | OpenAI TTS voice |
+| `TTS_BACKEND` | `kokoro` | `kokoro` (local) or explicitly `openai` |
+| `KOKORO_VOICE` | `af_heart` | Local Kokoro voice pack |
+| `KOKORO_SPEED` | `1.0` | Kokoro speaking speed |
+| `KOKORO_LANG` | `en-us` | Kokoro language |
+| `TTS_VOICE` | `onyx` | Voice used by the optional OpenAI TTS backend |
 | `WHISPER_DEVICE` | `cpu` | `cpu` or `cuda` for captions |
 | `WATERMARK` / `OUTRO` | `true` / `false` | Toggle the overlays |
 | `TARGET_SECONDS` | `30` | Script target guide; actual length varies with story (usually 20–45s) |
@@ -187,7 +223,7 @@ output/             generated videos
 
 | Setup | What | Approx |
 |---|---|---|
-| Script + voice + captions only | OpenAI text + TTS | **~$0.02** |
+| Local narration | Kokoro runs on your computer; no speech API call | **No per-audio API fee** |
 | + free stock or local SDXL stills | Pexels / GPU | ~$0.02 |
 | + Flux AI images (5 scenes) | fal images | ~$0.15 |
 | + Wan AI motion (5 scenes) | fal motion | ~$0.75 |
@@ -198,7 +234,7 @@ Start cheap (`ANIMATE=none`, stock footage) and turn the dials up where it matte
 
 **Do I need a GPU?** No. Use `IMAGE_BACKEND=fal` and `WHISPER_DEVICE=cpu`. A GPU only helps for free local SDXL images and faster captions.
 
-**Can I run it 100% free?** Mostly — OpenAI text/TTS is cents per video, and stock footage + Ken Burns motion are free. AI images/motion are the only paid pieces, and they're opt-in.
+**Can I render without paying for a voice API?** Yes. Kokoro is the default local TTS backend, so narration itself does not require a paid speech API. Text-generation APIs and paid AI visuals can still incur costs depending on your workflow.
 
 **Can I publish to YouTube and Instagram?** Yes. The CLI can preview platform-specific copy, then publish a finished reel. YouTube defaults to private; Instagram Reels publish publicly. See the publishing setup below.
 
