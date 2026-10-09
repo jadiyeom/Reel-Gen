@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Upload, Render & Publish — Shorts Studio{% endblock %}
+{% block subtitle %}external assets{% endblock %}
+{% block body %}
+<style>
+  .ext-hero{display:flex;justify-content:space-between;gap:24px;align-items:flex-end;margin:8px 0 28px}
+  .eyebrow{font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+  h1,h2,h3{font-family:'Sora',sans-serif} h1{font-size:clamp(28px,4vw,42px);line-height:1.08;max-width:680px;margin-bottom:12px}
+  .lead{color:var(--muted);line-height:1.65;max-width:740px}.local-badge{border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:9px 14px;font-size:12px;color:var(--muted)}
+  .panel{background:var(--surface);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:24px;margin-bottom:18px}
+  .panel h2{font-size:19px;margin-bottom:8px}.sub{color:var(--muted);font-size:13px;line-height:1.55;margin-bottom:20px}
+  .upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.drop{display:flex;flex-direction:column;justify-content:center;gap:10px;min-height:165px;padding:22px;border:1px dashed rgba(255,255,255,.25);border-radius:14px;background:rgba(255,255,255,.015);transition:.18s}
+  .drop:hover,.drop.drag{border-color:var(--accent);background:rgba(245,166,35,.05)}.drop strong{font-size:15px}.drop small{font-size:12px;line-height:1.45;color:var(--muted)}
+  input[type=file]{width:100%;font-size:13px;color:var(--muted);margin-top:4px}input[type=text],select{width:100%;background:#0c1118;border:1px solid rgba(255,255,255,.13);border-radius:10px;color:var(--text);padding:12px;font:inherit;font-size:14px}
+  label.field{display:block;font-size:12px;font-weight:700;color:var(--muted);margin:18px 0 7px}.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;border-radius:10px;padding:12px 17px;font-size:14px}
+  .btn:disabled{opacity:.45;cursor:not-allowed}.btn.secondary{background:transparent;border:1px solid rgba(255,255,255,.16);color:var(--text)}.micro{font-size:12px;color:var(--muted);line-height:1.55}
+  .toggle{display:flex;gap:9px;align-items:center;font-size:13px;color:var(--muted)}.hidden{display:none!important}.progress-shell{height:6px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden;margin:16px 0}
+  .progress-shell span{display:block;height:100%;width:8%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .3s}.status{margin-top:14px;padding:13px 15px;border-radius:10px;background:rgba(255,255,255,.035);font-size:13px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
+  .video-layout{display:grid;grid-template-columns:minmax(220px,320px) 1fr;gap:24px;align-items:start}.preview{width:100%;max-height:560px;aspect-ratio:9/16;object-fit:contain;background:#07090d;border-radius:14px;border:1px solid rgba(255,255,255,.1)}
+  .copybox{padding:15px;border:1px solid rgba(255,255,255,.08);border-radius:12px;margin-top:10px}.copybox label{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--accent);font-weight:800;display:block;margin-bottom:7px}.copybox p{font-size:13px;line-height:1.55;white-space:pre-wrap;color:var(--muted);overflow-wrap:anywhere}
+  .platforms{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:16px 0}.platform{display:flex;gap:9px;align-items:center;border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:13px;font-size:13px}.platform input{accent-color:var(--accent)}
+  .warning{border-left:3px solid var(--accent);padding:11px 14px;background:rgba(245,166,35,.06);color:var(--muted);font-size:12px;line-height:1.55;margin:15px 0}
+  .accounts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.account{border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:14px;display:flex;gap:12px;align-items:flex-start}.account .symbol{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:rgba(255,255,255,.06);flex:none}
+  .account .name{font-weight:700;font-size:13px}.account .hint{font-size:11px;color:var(--muted);line-height:1.45;margin-top:5px}.pill{font-size:10px;text-transform:uppercase;letter-spacing:.6px;border-radius:99px;padding:4px 7px;border:1px solid rgba(255,255,255,.15);color:var(--muted)}.pill.ready{color:#9ee6b6;border-color:rgba(82,211,133,.25);background:rgba(82,211,133,.06)}
+  .connect{margin-top:10px;font-size:11px;padding:7px 10px}.result-row{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid rgba(255,255,255,.08);padding:10px 0;font-size:12px}.result-row:last-child{border-bottom:0}
+  @media(max-width:760px){.wrap{padding:20px}.ext-hero{align-items:flex-start;flex-direction:column}.upload-grid,.video-layout{grid-template-columns:1fr}.platforms{grid-template-columns:repeat(2,minmax(0,1fr))}.accounts{grid-template-columns:1fr}}
+</style>
+<section class="ext-hero"><div><div class="eyebrow">ReelGen · Asset workflow</div><h1>From your assets to a finished reel.</h1><p class="lead">Upload the image ZIP and storyboard JSON you already have. ReelGen validates the scenes, renders locally with your configured voice and caption pipeline, then lets you publish to selected connected accounts.</p></div><div class="local-badge">⌂ Runs on this computer</div></section>
+
+<section class="panel"><h2>01 / Upload your production files</h2><p class="sub">Choose script.json with a non-empty scenes array and a ZIP containing the referenced PNG/JPG/WEBP illustrations. Images are copied into a local workspace; unsafe ZIP paths are rejected.</p>
+<form id="renderForm"><div class="upload-grid">
+<label class="drop" id="scriptDrop"><strong>↳ Storyboard JSON</strong><small>script.json · scene order, narration, source URL and social copy.</small><input required type="file" name="script" id="scriptFile" accept=".json,application/json"><small id="scriptName">No file selected</small></label>
+<label class="drop" id="imagesDrop"><strong>↳ Scene images ZIP</strong><small>One ZIP with illustrations. A folder like images/scene_01.png is fine.</small><input required type="file" name="images_zip" id="imagesFile" accept=".zip,application/zip"><small id="imagesName">No file selected</small></label>
+</div><label class="field" for="articleUrl">Source article URL</label><input type="text" name="article_url" id="articleUrl" placeholder="Read from script.json if already included">
+<div class="upload-grid"><div><label class="field" for="aspectRatio">Video format</label><select id="aspectRatio" name="aspect_ratio"><option value="9:16">9:16 · Shorts / Reels</option><option value="16:9">16:9 · YouTube landscape</option></select></div><div style="display:flex;align-items:flex-end;padding-bottom:3px"><label class="toggle"><input type="checkbox" name="captions" id="captions" checked> Burn in timed captions</label></div></div>
+<div class="row" style="margin-top:20px"><button class="btn" type="submit" id="renderButton">✦ Validate &amp; render video</button><span class="micro">Uses the local Python pipeline and TTS backend configured in .env.</span></div></form>
+<div id="renderStatus" class="status hidden" aria-live="polite"></div><div id="renderProgress" class="progress-shell hidden"><span id="renderProgressBar"></span></div></section>
+
+<section class="panel hidden" id="resultPanel"><h2>02 / Review the finished video</h2><p class="sub">Preview the render and check its platform copy before posting.</p>
+<div class="video-layout"><div><video id="videoPlayer" class="preview" controls playsinline></video><div class="row" style="margin-top:12px"><a id="downloadVideo" class="btn secondary" href="#" download>↓ Download MP4</a><a id="openReview" class="btn secondary" href="#">Open review page ↗</a></div></div>
+<div><h3 id="videoTitle" style="font-size:19px;margin-bottom:6px"></h3><p id="videoSource" class="micro"></p><div class="copybox"><label>YouTube title</label><p id="ytTitle"></p></div><div class="copybox"><label>YouTube description</label><p id="ytDescription"></p></div><div class="copybox"><label>Instagram caption</label><p id="igCaption"></p></div><div class="copybox"><label>X caption</label><p id="xCaption"></p></div><div class="copybox"><label>TikTok caption · manual upload</label><p id="ttCaption"></p></div></div></div></section>
+
+<section class="panel hidden" id="publishPanel"><h2>03 / Publish to your social accounts</h2><p class="sub">Select destinations and publish from one button. Each destination reports success or failure independently; already-published destinations are skipped to prevent duplicate posts.</p>
+<div class="platforms"><label class="platform"><input type="checkbox" name="platform" value="youtube" checked><span>▶ YouTube Shorts</span></label><label class="platform"><input type="checkbox" name="platform" value="instagram" checked><span>◎ Instagram Reels</span></label><label class="platform"><input type="checkbox" name="platform" value="facebook" checked><span>f Facebook Reels</span></label><label class="platform"><input type="checkbox" name="platform" value="x" checked><span>𝕏 X</span></label></div>
+<label class="field" for="privacyStatus">YouTube visibility</label><select id="privacyStatus"><option value="public">Public</option><option value="unlisted">Unlisted</option><option value="private">Private</option></select>
+<div class="warning">Publishing can make content public. TikTok posting is not yet implemented here; its video and caption are provided for manual upload. Instagram, Facebook and X depend on account type, API permissions and platform limits.</div>
+<label class="toggle" style="margin:16px 0"><input type="checkbox" id="confirmPublish"> I reviewed the video and captions and authorize publishing to the selected accounts now.</label>
+<div class="row"><button id="publishButton" class="btn" disabled>↗ Publish to selected accounts</button><span id="publishStatus" class="micro"></span></div><div id="publishResults" class="status hidden"></div><div id="publishProgress" class="progress-shell hidden"><span id="publishProgressBar"></span></div></section>
+
+<section class="panel"><h2>Account setup</h2><p class="sub">Connect once, then publish from this page. Secrets and OAuth tokens stay in local .env/data files and are never displayed here.</p><div class="accounts" id="accounts"></div><p class="micro" style="margin-top:14px">Instagram requires an access token and business account ID in .env. Connect Drive staging only authorizes temporary media staging; it does not authorize Instagram itself.</p></section>
+<script>
+const $ = id => document.getElementById(id);
+let activeVideoId = null;
+const esc = value => String(value == null ? '' : value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+function setStatus(id,text,error){const el=$(id);el.textContent=text;el.classList.remove('hidden');el.style.borderLeft=error?'3px solid #f87171':'3px solid var(--accent)';}
+function setProgress(id,bar,n){$(id).classList.remove('hidden');$(bar).style.width=Math.max(8,Math.min(100,n))+'%';}
+function setFileLabel(input,label){const f=input.files[0];$(label).textContent=f?f.name+' · '+(f.size/1024/1024).toFixed(1)+' MB':'No file selected';}
+$('scriptFile').addEventListener('change',()=>setFileLabel($('scriptFile'),'scriptName'));
+$('imagesFile').addEventListener('change',()=>setFileLabel($('imagesFile'),'imagesName'));
+[['scriptDrop','scriptFile','scriptName'],['imagesDrop','imagesFile','imagesName']].forEach(row=>{
+ const zone=$(row[0]);zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('drag')});
+ zone.addEventListener('dragleave',()=>zone.classList.remove('drag'));
+ zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('drag');if(e.dataTransfer.files.length){$(row[1]).files=e.dataTransfer.files;setFileLabel($(row[1]),row[2]);}});
+});
+async function pollJob(id,onDone,onError,progressId,barId){
+ for(let rounds=0;rounds<1200;rounds++){
+  await new Promise(resolve=>setTimeout(resolve,1500));let data;
+  try{const response=await fetch('/api/job/'+encodeURIComponent(id));data=await response.json();}catch(err){onError('Could not read job status: '+err);return;}
+  if(data.stage==='error'){onError(data.error||'Job failed');return;}
+  const done=data.stage==='done';setProgress(progressId,barId,done?100:Math.min(93,8+rounds*.35));
+  if(data.publish_results&&progressId==='publishProgress')showPublishResults(data.publish_results);
+  if(data.stage&&progressId==='renderProgress')setStatus('renderStatus',data.stage);
+  if(data.stage&&progressId==='publishProgress')setStatus('publishStatus',data.stage);
+  if(done){await onDone(data);return;}
+ }
+ onError('This job is taking longer than expected. It may still be running; refresh and check Videos.');
+}
+$('renderForm').addEventListener('submit',async e=>{
+ e.preventDefault();if(!$('scriptFile').files.length||!$('imagesFile').files.length){setStatus('renderStatus','Choose both script.json and the image ZIP.',true);return;}
+ $('renderButton').disabled=true;$('resultPanel').classList.add('hidden');$('publishPanel').classList.add('hidden');
+ setStatus('renderStatus','Uploading files and validating images…');setProgress('renderProgress','renderProgressBar',8);
+ try{
+  const response=await fetch('/api/external/render',{method:'POST',body:new FormData($('renderForm'))});const data=await response.json();
+  if(!response.ok)throw new Error(data.error||'Upload failed');
+  setStatus('renderStatus',data.message+' '+data.image_count+' images, '+data.scene_count+' scenes. Job: '+data.job);
+  await pollJob(data.job,async job=>{
+   if(!job.vid)throw new Error('Render finished without a video ID.');activeVideoId=job.vid;
+   $('resultPanel').classList.remove('hidden');$('publishPanel').classList.remove('hidden');
+   $('videoPlayer').src='/media/'+encodeURIComponent(activeVideoId)+'/final.mp4';
+   $('downloadVideo').href='/download/'+encodeURIComponent(activeVideoId);$('openReview').href='/v/'+encodeURIComponent(activeVideoId);
+   const mr=await fetch('/api/external/video/'+encodeURIComponent(activeVideoId));const meta=await mr.json();
+   $('videoTitle').textContent=meta.title||activeVideoId;$('videoSource').textContent=meta.source_url||'';
+   $('ytTitle').textContent=meta.youtube_title||'';$('ytDescription').textContent=meta.youtube_description||'';
+   $('igCaption').textContent=meta.instagram_caption||'';$('xCaption').textContent=meta.x_caption||'';$('ttCaption').textContent=meta.tiktok_caption||'';
+   setStatus('renderStatus','Render complete. Review the video and select where to publish.');
+   $('confirmPublish').checked=false;$('publishButton').disabled=true;window.scrollTo({top:$('resultPanel').offsetTop-90,behavior:'smooth'});await refreshAccounts();
+  },err=>setStatus('renderStatus',err,true),'renderProgress','renderProgressBar');
+ }catch(err){setStatus('renderStatus',err.message||String(err),true);}finally{$('renderButton').disabled=false;}
+});
+$('confirmPublish').addEventListener('change',()=>{$('publishButton').disabled=!$('confirmPublish').checked||!activeVideoId;});
+function showPublishResults(results){
+ const rows=Object.entries(results||{}).map(pair=>{
+  const name=pair[0],r=pair[1];const detail=r.ok?'✓ '+(r.status||'published'):(r.status==='skipped'?'Skipped':r.error||r.message||'Failed');
+  return '<div class="result-row"><strong>'+esc(name)+'</strong><span>'+esc(detail)+'</span></div>';
+ }).join('');
+ $('publishResults').innerHTML=rows;$('publishResults').classList.toggle('hidden',!rows);
+}
+$('publishButton').addEventListener('click',async()=>{
+ if(!activeVideoId||!$('confirmPublish').checked)return;
+ const platforms=Array.from(document.querySelectorAll('input[name="platform"]:checked')).map(el=>el.value);
+ if(!platforms.length){setStatus('publishStatus','Select at least one platform.',true);return;}
+ $('publishButton').disabled=true;setStatus('publishStatus','Starting publication…');setProgress('publishProgress','publishProgressBar',8);
+ try{
+  const response=await fetch('/api/external/publish',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vid:activeVideoId,platforms:platforms,privacy_status:$('privacyStatus').value,confirm:true})});
+  const data=await response.json();if(!response.ok)throw new Error(data.error||'Could not start publishing');
+  await pollJob(data.job,job=>{showPublishResults(job.publish_results||{});const failures=Object.values(job.publish_results||{}).filter(r=>!r.ok&&r.status!=='skipped').length;setStatus('publishStatus',failures?'Finished with '+failures+' platform error(s). Check results below.':'Publishing attempts completed. Check results below.',failures>0);},err=>setStatus('publishStatus',err,true),'publishProgress','publishProgressBar');
+ }catch(err){setStatus('publishStatus',err.message||String(err),true);}finally{$('publishButton').disabled=!$('confirmPublish').checked;}
+});
+async function refreshAccounts(){
+ try{
+  const response=await fetch('/api/external/accounts');const data=await response.json();
+  $('accounts').innerHTML=(data.accounts||[]).map(a=>{
+   const connectId=a.id==='instagram'?'instagram-drive':a.id;
+   const buttonLabel=a.id==='instagram'?'Connect Drive staging':'Connect / refresh';
+   const symbol=a.id==='youtube'?'▶':a.id==='instagram'?'◎':a.id==='facebook'?'f':'𝕏';
+   return '<div class="account"><div class="symbol">'+symbol+'</div><div style="flex:1"><div class="row" style="justify-content:space-between"><span class="name">'+esc(a.label)+'</span><span class="pill '+(a.connected?'ready':'')+'">'+(a.connected?'Configured':'Setup needed')+'</span></div><p class="hint">'+esc(a.hint)+'</p><button type="button" class="btn secondary connect" data-connect="'+connectId+'">'+buttonLabel+'</button></div></div>';
+  }).join('');
+  document.querySelectorAll('[data-connect]').forEach(button=>button.addEventListener('click',()=>connectAccount(button.dataset.connect)));
+ }catch(err){$('accounts').textContent='Could not load account status.';}
+}
+async function connectAccount(platform){
+ setStatus('renderStatus','Starting '+platform+' connection. Complete authorization in the browser window if one opens.');
+ try{
+  const response=await fetch('/api/external/connect/'+encodeURIComponent(platform),{method:'POST'});const data=await response.json();
+  if(!response.ok)throw new Error(data.error||'Could not start connection');
+  await pollJob(data.job,async job=>{setStatus('renderStatus',job.message||'Connection completed. Refreshing account status.');await refreshAccounts();},err=>setStatus('renderStatus',err,true),'renderProgress','renderProgressBar');
+ }catch(err){setStatus('renderStatus',err.message||String(err),true);}
+}
+refreshAccounts();
+</script>
+{% endblock %}

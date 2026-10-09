@@ -442,5 +442,9 @@ def run_server(host: str = "127.0.0.1", port: int = 5000) -> None:
     app.run(host=host, port=port, debug=False, threaded=True)
 
 
+# Register the local import/render/publish workflow alongside the main dashboard.
+from .external_workflow import register_external_routes
+register_external_routes(app)
+
 if __name__ == "__main__":
     run_server()
