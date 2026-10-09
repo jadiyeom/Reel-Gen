@@ -1,8 +1,8 @@
-# AI Shorts Generator — Automated Short-Form Video Pipeline
+# ReelGen — AI Short-Form Video Production
 
-> Turn a single topic into a finished, captioned vertical video for **YouTube Shorts, TikTok, and Instagram Reels** — script, AI visuals, voiceover, karaoke captions, music, and an optional watermark, fully automated.
+> Turn an idea or article into a short-form video workflow: script, visual direction, voiceover, captions, music, and export-ready MP4s for **YouTube Shorts, TikTok, and Instagram Reels**.
 
-**AI Shorts Generator** is an open-source, faceless short-form video maker. Give it a topic (or let it pick one) and it writes the script, generates the visuals, narrates it, burns in word-by-word captions, lays a music bed, and exports a ready-to-post `1080×1920` MP4 with per-platform titles, descriptions, and hashtags — plus a local review dashboard to preview and publish.
+**ReelGen** is an AI-assisted short-form video production workspace. Its local Python app can write scripts, generate or reuse visuals, create narration, burn in timed captions, mix music, and export a `1080×1920` MP4 with platform-specific copy. The repository also includes a lightweight hosted storyboard builder at `index.html` for planning and exporting a `storyboard.json`.
 
 It works **two ways**, and you can mix them per video:
 
@@ -19,6 +19,14 @@ It works **two ways**, and you can mix them per video:
 </p>
 
 ---
+
+## Deploy the hosted storyboard builder
+
+[Open Vercel New Project](https://vercel.com/new)
+
+In Vercel, choose **Add New → Project**, import the existing `jadiyeom/Reel-Gen` GitHub repository (do not use a repository-cloning template), keep the root directory as `/`, and deploy. The hosted page is a static, browser-based storyboard planner; **it does not run AI generation, render MP4s, or publish to social platforms on Vercel**. It requires no environment variables and does not send your storyboard to a server. Export the JSON and use it with your local ReelGen renderer.
+
+The full Python pipeline remains available locally. A truly hosted render service needs durable object storage and a persistent job worker/queue, and should be added as a separate deployment layer rather than relying on ephemeral serverless disk.
 
 ## ✨ Features
 
@@ -54,8 +62,8 @@ Each scene is a cinematic moving image; the only on-screen text is the karaoke c
 **Prerequisites:** Python 3.10+ and [FFmpeg](https://ffmpeg.org/download.html) on your `PATH`.
 
 ```bash
-git clone https://github.com/AbdullahNaveed/ai-shorts-generator.git
-cd ai-shorts-generator
+git clone https://github.com/jadiyeom/Reel-Gen.git
+cd Reel-Gen
 
 python -m venv .venv
 # Windows:  .venv\Scripts\activate
@@ -95,7 +103,7 @@ Video format defaults to portrait 9:16. Select `--aspect-ratio 16:9` for a 1920�
 
 On Windows you can also double-click **`start.bat`** to launch the dashboard and **`stop.bat`** to shut it down.
 
-### The review dashboard
+### The local review dashboard
 
 `python run.py serve` opens a local web app where you can:
 
