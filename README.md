@@ -28,6 +28,20 @@ In Vercel, choose **Add New → Project**, import the existing `jadiyeom/Reel-Ge
 
 The full Python pipeline remains available locally. A truly hosted render service needs durable object storage and a persistent job worker/queue, and should be added as a separate deployment layer rather than relying on ephemeral serverless disk.
 
+## Local upload, render, and publish dashboard
+
+Run ReelGen locally (the renderer is not run on Vercel):
+
+```bash
+python run.py serve
+```
+
+Open [http://127.0.0.1:5000/external](http://127.0.0.1:5000/external). Upload your `script.json` and a ZIP containing its scene PNG/JPG/WEBP files, select the aspect ratio, and choose **Validate & render video**. The dashboard checks the storyboard and image archive, runs the existing external-asset pipeline in a background job, and shows the MP4 and platform copy when complete.
+
+From the same page, review the render, select YouTube Shorts, Instagram Reels, Facebook Reels, and/or X, then confirm **Publish to selected accounts**. Account authorization is a one-time setup; buttons are provided for YouTube, Facebook, X, and Google Drive staging. Instagram additionally requires `INSTAGRAM_ACCESS_TOKEN` and `INSTAGRAM_BUSINESS_ACCOUNT_ID` in the local `.env`. Credentials are not displayed in the UI. YouTube visibility is selectable; other platforms follow their API/account defaults. Already-published platforms are skipped to reduce accidental duplicates. TikTok posting is not implemented in the current publisher, but its caption is shown for manual upload.
+
+Keep the dashboard bound to localhost. This UI is intended for your own computer; do not expose the unauthenticated local Flask server to the public internet. Social publishing is a real external action and requires valid credentials, API permissions, and platform eligibility.
+
 ## ✨ Features
 
 - **Topic → finished video**, end to end, in one command.
