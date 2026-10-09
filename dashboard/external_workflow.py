@@ -134,7 +134,7 @@ def external_page():
 def external_accounts():
     """Expose account setup status only; never return credentials or tokens."""
     youtube = config.YOUTUBE_TOKEN_FILE.is_file()
-    instagram = bool(config.INSTAGRAM_ACCESS_TOKEN and config.INSTAGRAM_BUSINESS_ACCOUNT_ID)
+    instagram = bool((config.INSTAGRAM_ACCESS_TOKEN or config.INSTAGRAM_TOKEN_FILE.is_file()) and config.INSTAGRAM_BUSINESS_ACCOUNT_ID)
     facebook = bool(
         config.FACEBOOK_PAGE_ID
         and (config.FACEBOOK_PAGE_ACCESS_TOKEN or config.FACEBOOK_PAGE_TOKEN_FILE.is_file())
