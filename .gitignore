@@ -51,3 +51,9 @@ data/youtube_client_secrets.json
 .env
 .env.*
 !.env.example
+
+# --- credential files (never commit OAuth/API credentials) ---
+data/*oauth*token*.json
+data/*client*secrets*.json
+data/*access*token*.json
+data/*page*token*.json
