@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b0d0b">
+<meta name="description" content="Shape a short-form video storyboard with ReelGen. Plan narration and visuals, then render locally.">
+<title>ReelGen — from idea to video</title>
+<style>
+:root{color-scheme:dark;--bg:#0b0d0b;--panel:#121512;--panel2:#171b16;--line:#2a3127;--text:#f4f5ef;--muted:#9ca697;--lime:#c9f36b;--lime2:#a8d852;--max:1160px}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:80px}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;letter-spacing:-.015em}
+a{color:inherit;text-decoration:none}button,input,textarea,select{font:inherit}button,a,input,textarea,select{ -webkit-tap-highlight-color:transparent}button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--lime);outline-offset:3px}
+.shell{width:min(var(--max),calc(100% - 40px));margin:auto}.nav{height:76px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #20241e}
+.brand{display:inline-flex;align-items:center;gap:10px;font-size:18px;font-weight:800;letter-spacing:-.05em}.mark{width:34px;height:34px;display:grid;place-items:center;background:var(--lime);border-radius:11px;color:#10140b}.mark svg{width:22px;height:22px}
+.navlinks,.navactions{display:flex;align-items:center;gap:24px}.navlinks{color:#b5beb1;font-size:12px}.navlinks a:hover{color:var(--lime)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;border:1px solid var(--line);border-radius:11px;padding:11px 15px;font-size:12px;font-weight:750;cursor:pointer;transition:transform .15s,border-color .15s,background .15s}.btn:hover{transform:translateY(-1px);border-color:#667454}.btn.primary{background:var(--lime);border-color:var(--lime);color:#10140b}.btn.primary:hover{background:#dbff95}.btn.ghost{background:transparent;color:var(--text)}.btn svg{width:15px;height:15px}
+.hero{display:grid;grid-template-columns:1fr .94fr;gap:54px;align-items:center;padding:80px 0 75px}.eyebrow,.kicker{display:flex;align-items:center;gap:9px;color:var(--lime);font-size:10px;font-weight:850;letter-spacing:.15em;text-transform:uppercase}.eyebrow:before{content:"";width:22px;height:1px;background:var(--lime)}
+h1{max-width:650px;font-size:clamp(47px,6.5vw,78px);line-height:.98;letter-spacing:-.078em;font-weight:760;margin:22px 0}.accent{color:var(--lime)}.hero p{max-width:560px;color:#b1b9ab;line-height:1.75;font-size:16px}.hero-actions{display:flex;flex-wrap:wrap;gap:11px;margin-top:27px}.micro{display:flex;align-items:center;gap:8px;color:#879181;font-size:11px;margin-top:22px}.micro b{color:var(--lime)}
+.preview{padding:18px;border:1px solid #293026;border-radius:27px;background:linear-gradient(145deg,#171b16,#0e100e);box-shadow:0 24px 80px #0008;position:relative}.previewtop{display:flex;justify-content:space-between;font-size:10px;color:#9da797;margin:1px 2px 14px}.ready{color:var(--lime)}.ready:before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--lime);margin-right:7px;box-shadow:0 0 12px #c9f36b88}
+.previewgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.frame{height:310px;position:relative;border:1px solid #30372b;border-radius:15px;overflow:hidden;background:radial-gradient(ellipse at 50% 26%,#b7e25d26,transparent 42%),linear-gradient(155deg,#242b20,#0b0e0b 72%)}
+.frame svg{position:absolute;inset:0;width:100%;height:100%}.frametxt{position:absolute;bottom:12px;left:12px;right:12px;font-size:11px;line-height:1.35;font-weight:750}.frametxt small{display:block;color:#9eaa96;font-size:9px;letter-spacing:.12em;margin-bottom:5px}
+.stack{display:flex;flex-direction:column;gap:10px}.mini{padding:13px;border:1px solid #30372b;background:#191e17;border-radius:13px;flex:1}.minihead{display:flex;justify-content:space-between;gap:10px;color:#a0ab99;font-size:9px;margin-bottom:8px}.minihead b{color:var(--lime)}.minititle{font-size:13px;font-weight:750;line-height:1.3;letter-spacing:-.04em}.line{height:5px;border-radius:99px;background:#394333;margin-top:8px}.line.lime{background:linear-gradient(90deg,var(--lime),#70894b)}
+.timeline{grid-column:1/-1;background:#10130f;border:1px solid #30372b;padding:12px;border-radius:13px}.timehead{display:flex;justify-content:space-between;color:#9da797;font-size:9px;margin-bottom:9px}.tracks{display:flex;gap:4px}.track{height:20px;border-radius:4px;flex:1;background:#45523a}.track:nth-child(2n){background:#617445}.track:first-child{background:var(--lime)}.audio{height:15px;margin-top:5px;background:repeating-linear-gradient(90deg,#333b2f 0 2px,#171b15 2px 6px);border-radius:4px}
+.section{padding:68px 0}.sectionhead{display:flex;justify-content:space-between;align-items:end;gap:25px;margin-bottom:26px}.kicker{display:block}.section h2{font-size:clamp(30px,4vw,43px);line-height:1.05;letter-spacing:-.065em;margin:10px 0 0}.intro{max-width:440px;color:var(--muted);font-size:13px}
+.workflow{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}.wf{border:1px solid var(--line);border-radius:17px;background:linear-gradient(150deg,#151914,#10120f);padding:20px;min-height:186px}.icon{width:36px;height:36px;border:1px solid #414d35;border-radius:11px;display:grid;place-items:center;color:var(--lime);background:#c9f36b0d;margin-bottom:24px}.icon svg{width:19px;height:19px}.wf h3{font-size:15px;margin:0 0 7px;letter-spacing:-.04em}.wf p{font-size:11px;line-height:1.65;color:#9ea898;margin:0}
+.studio{border-top:1px solid #20241e;border-bottom:1px solid #20241e;background:radial-gradient(ellipse at 80% 0%,#c9f36b09,transparent 38%)}.studio-layout{display:grid;grid-template-columns:.74fr 1.26fr;gap:34px;align-items:start}.sidetext{position:sticky;top:24px}.sidetext h2{font-size:42px;line-height:1.02;letter-spacing:-.065em;margin:10px 0 16px}.sidetext p{color:var(--muted);font-size:13px;line-height:1.75}.notice{margin-top:20px;padding:14px 15px;border:1px solid #3c4931;background:#c9f36b09;border-radius:12px;color:#c6d0be;font-size:11px;line-height:1.65}.notice b{color:var(--lime)}
+.formcard{border:1px solid #2b3228;background:#111410;border-radius:20px;padding:22px}.formhead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:19px}.formhead h3{font-size:16px;margin:0;letter-spacing:-.04em}.pill{border:1px solid #3c4832;border-radius:999px;padding:5px 9px;font-size:9px;color:var(--lime);font-weight:800;white-space:nowrap}
+.fieldgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.field{min-width:0;margin-bottom:14px}label{display:block;color:#cbd2c5;font-size:10px;font-weight:750;margin-bottom:7px}input,textarea,select{width:100%;border:1px solid #30372d;border-radius:9px;background:#0b0d0b;color:var(--text);padding:11px 12px;font-size:12px;outline:none}input::placeholder,textarea::placeholder{color:#717b6d}input:focus,textarea:focus,select:focus{border-color:#778c50}textarea{resize:vertical;line-height:1.5;min-height:75px}.helper{font-size:10px;color:#828d7b;margin-top:6px;line-height:1.45}
+.sceneshead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:13px 0 12px}.sceneshead h4{font-size:12px;margin:0}.sceneshead span{font-size:10px;color:#83907e}.scenelist{display:flex;flex-direction:column;gap:9px}.scenerow{padding:12px;border:1px solid #2c3329;border-radius:12px;background:#151813}.scenetitle{display:flex;align-items:center;gap:9px;margin-bottom:10px}.num{width:25px;height:25px;display:grid;place-items:center;background:#c9f36b16;color:var(--lime);border-radius:8px;font-size:9px;font-weight:850;flex:none}.scenetitle strong{font-size:11px}.scenetitle small{margin-left:auto;color:#7d8976;font-size:9px}.scenefields{display:grid;grid-template-columns:1fr 1fr;gap:10px}.scenefields label{font-size:9px;color:#aab4a4}.scenefields textarea{min-height:78px;font-size:11px}
+.formfoot{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-top:15px;margin-top:16px;border-top:1px solid #252b22}.formfoot small{color:#879181;font-size:10px}.output{margin-top:15px;border:1px solid #2c3329;border-radius:13px;overflow:hidden;background:#090b09}.output[hidden]{display:none}.outhead{display:flex;justify-content:space-between;align-items:center;gap:9px;padding:12px;border-bottom:1px solid #252b22}.outhead strong{font-size:11px}.outhead span{font-size:10px;color:#899483}pre{margin:0;padding:13px;max-height:280px;overflow:auto;white-space:pre;color:#d0dfb9;font:10px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace}.rendersteps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.renderstep{border:1px solid var(--line);border-radius:15px;padding:17px}.renderstep .stepnum{color:var(--lime);font-size:9px;font-weight:850;letter-spacing:.12em}.renderstep h3{font-size:13px;margin:12px 0 6px}.renderstep p{margin:0;color:var(--muted);font-size:11px;line-height:1.7}code,.command{font:10px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace;color:#d7efa7;background:#192015;border:1px solid #303c26;border-radius:6px;padding:3px 6px;overflow-wrap:anywhere}.command{display:block;margin-top:15px;padding:13px;background:#080a08;border-color:#272e23;color:#c6d0bd;white-space:normal}footer{border-top:1px solid #20241e;padding:23px 0 30px;color:#818c7d;font-size:10px}.footerrow{display:flex;align-items:center;justify-content:space-between;gap:13px;flex-wrap:wrap}.toast{position:fixed;right:20px;bottom:20px;z-index:9;border:1px solid #53683d;background:#1a2214;color:#e6f5d1;border-radius:12px;padding:12px 15px;font-size:11px;box-shadow:0 18px 60px #0008;opacity:0;transform:translateY(8px);transition:.2s;pointer-events:none}.toast.show{opacity:1;transform:translateY(0)}
+@media(max-width:900px){.hero{grid-template-columns:1fr;gap:35px;padding-top:60px}.preview{max-width:620px}.workflow{grid-template-columns:repeat(2,1fr)}.studio-layout{grid-template-columns:1fr;gap:22px}.sidetext{position:static}.sectionhead{align-items:start;flex-direction:column}}
+@media(max-width:620px){.shell{width:calc(100% - 28px)}.nav{height:66px}.navlinks{display:none}.navactions .ghost{display:none}.brand{font-size:16px}.hero{padding:49px 0 54px;gap:30px}h1{font-size:clamp(44px,13vw,64px)}.hero p{font-size:14px}.preview{padding:11px;border-radius:21px}.frame{height:255px}.previewgrid{gap:7px}.mini{padding:9px}.minititle{font-size:12px}.section{padding:52px 0}.workflow{gap:8px}.wf{padding:14px;min-height:175px}.icon{margin-bottom:20px}.studio-layout{gap:23px}.sidetext h2{font-size:36px}.formcard{padding:14px;border-radius:16px}.fieldgrid,.scenefields{grid-template-columns:1fr}.scenerow{padding:10px}.formfoot{align-items:stretch}.formfoot .btn{width:100%}.rendersteps{grid-template-columns:1fr}.sectionhead{gap:12px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<header class="shell nav">
+<a class="brand" href="#" aria-label="ReelGen home"><span class="mark"><svg viewBox="0 0 24 24" fill="none"><path d="M5 7.5h4.5v9H5zM14.5 5h4.5v14h-4.5zM9.5 10h5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>ReelGen</a>
+<nav class="navlinks" aria-label="Main navigation"><a href="#workflow">Workflow</a><a href="#studio">Storyboard builder</a><a href="#local-render">Render locally</a></nav>
+<div class="navactions"><a class="btn ghost" href="https://github.com/jadiyeom/Reel-Gen" target="_blank" rel="noreferrer">View source ↗</a><a class="btn primary" href="#studio">Build a storyboard ↓</a></div>
+</header>
+<main>
+<section class="shell hero">
+<div><div class="eyebrow">Your AI video production workspace</div><h1>From a sharp idea to a video people <span class="accent">finish.</span></h1>
+<p>Turn a topic or article into a thoughtful scene-by-scene plan. Shape the narration, direct the visuals, and take an export-ready storyboard into ReelGen's local rendering pipeline.</p>
+<div class="hero-actions"><a class="btn primary" href="#studio">Build your storyboard <svg viewBox="0 0 20 20" fill="none"><path d="M4 10h12m-5-5 5 5-5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="btn ghost" href="#workflow">Explore the workflow</a></div>
+<div class="micro"><b>✓</b> Browser-based planning · No API key needed for this builder</div></div>
+<div class="preview" aria-label="Illustration of the ReelGen video workflow"><div class="previewtop"><span>REELGEN / STUDIO PREVIEW</span><span class="ready">STORYBOARD READY</span></div>
+<div class="previewgrid"><div class="frame"><svg viewBox="0 0 260 360" fill="none" aria-hidden="true"><circle cx="130" cy="95" r="58" stroke="#C9F36B" stroke-opacity=".32"/><circle cx="130" cy="95" r="38" stroke="#C9F36B" stroke-opacity=".65" stroke-width="1.5"/><circle cx="130" cy="95" r="8" fill="#C9F36B"/><path d="M130 137v63m0-42-42 35m42-35 43 24m-43 18-28 45m28-45 31 43" stroke="#E6EBD9" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M41 220h178M58 241h144M78 262h104" stroke="#69755B" stroke-width="1.5" stroke-linecap="round"/><path d="M34 100c19-35 36-50 62-55M226 102c-18-36-39-52-62-56" stroke="#C9F36B" stroke-opacity=".3" stroke-width="1.5" stroke-dasharray="3 6"/><circle cx="54" cy="72" r="4" fill="#EFAA72"/><circle cx="209" cy="75" r="3" fill="#C9F36B"/></svg><div class="frametxt"><small>SCENE 01 · THE HOOK</small>Your first frame should earn the next five seconds.</div></div>
+<div class="stack"><div class="mini"><div class="minihead"><span>01 / NARRATION</span><b>READY</b></div><div class="minititle">One clear idea.<br>One visual metaphor.</div><div class="line lime" style="width:82%"></div><div class="line" style="width:60%"></div></div><div class="mini"><div class="minihead"><span>02 / VISUAL DIRECTION</span><b>6 SCENES</b></div><div class="minititle">A consistent visual world, frame by frame.</div><div class="line" style="width:94%"></div><div class="line" style="width:74%"></div><div class="line" style="width:51%"></div></div><div class="mini"><div class="minihead"><span>03 / DELIVERY</span><b>9:16</b></div><div class="minititle">A plan ready for voice, captions, and motion.</div></div></div>
+<div class="timeline"><div class="timehead"><span>EDIT TIMELINE</span><span>00:32 · 30 FPS</span></div><div class="tracks"><i class="track"></i><i class="track"></i><i class="track"></i><i class="track"></i><i class="track"></i><i class="track"></i></div><div class="audio"></div></div></div></div>
+</section>
+<section class="shell section" id="workflow"><div class="sectionhead"><div><div class="kicker">One clear pipeline</div><h2>Make every stage count.</h2></div><p class="intro">ReelGen is built around the actual production workflow—not just a prompt box. Give each scene a job before you spend time generating it.</p></div>
+<div class="workflow">
+<article class="wf"><div class="icon"><svg viewBox="0 0 24 24" fill="none"><path d="M5 4.5h14v15H5zM8 8h8M8 12h8M8 16h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div><h3>01 · Story</h3><p>Define the central idea, sharpen the hook, and write narration that moves one beat at a time.</p></article>
+<article class="wf"><div class="icon"><svg viewBox="0 0 24 24" fill="none"><rect x="3.5" y="4" width="17" height="16" rx="2" stroke="currentColor" stroke-width="1.6"/><circle cx="9" cy="10" r="2" stroke="currentColor" stroke-width="1.6"/><path d="m5 18 5-4 3 2 4-5 3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div><h3>02 · Visuals</h3><p>Direct each scene's composition and visual metaphor, or prepare images you already have.</p></article>
+<article class="wf"><div class="icon"><svg viewBox="0 0 24 24" fill="none"><path d="M4 10v4m4-8v12m4-15v18m4-13v8m4-11v14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div><h3>03 · Voice & captions</h3><p>Use the local pipeline for narration, timed captions, pacing, and music under the voice.</p></article>
+<article class="wf"><div class="icon"><svg viewBox="0 0 24 24" fill="none"><path d="M4 6.5h16v11H4zM9 21h6m-3-3.5V21m-3-10 6 2.5-6 2.5z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div><h3>04 · Render & review</h3><p>Assemble an MP4, review it, refine details, then prepare platform-specific copy.</p></article>
+</div></section>
+<section class="studio section" id="studio"><div class="shell studio-layout">
+<div class="sidetext"><div class="kicker">Storyboard builder</div><h2>Make the plan yours.</h2><p>Start with a topic, then edit the voiceover and visual direction scene by scene. Export a JSON storyboard that follows ReelGen's external-storyboard format.</p><div class="notice"><b>Hosted mode, clearly scoped.</b> This Vercel page is a lightweight storyboard builder. It does not call an AI provider, render MP4s, or publish to social accounts. Those steps remain in the local Python app, where your keys and media can stay on your machine.</div><p style="font-size:11px;margin-top:17px">Already have the repo? See the <a href="https://github.com/jadiyeom/Reel-Gen#quickstart" target="_blank" rel="noreferrer" style="color:var(--lime);text-decoration:underline;text-underline-offset:3px">local quickstart ↗</a> to run the full pipeline.</p></div>
+<div class="formcard"><div class="formhead"><h3>Production brief</h3><span class="pill">EXPORTABLE JSON</span></div>
+<form id="briefForm">
+<div class="field"><label for="topic">WHAT'S THE VIDEO ABOUT?</label><input id="topic" maxlength="160" value="Why attention is so hard to protect" placeholder="e.g. why attention is hard to protect" required></div>
+<div class="field"><label for="sourceUrl">SOURCE ARTICLE URL <span style="font-weight:500;color:#818b7d">(optional while planning)</span></label><input id="sourceUrl" type="url" placeholder="https://example.com/article"><div class="helper">Add a source if your video should credit a specific article. You can also pass it when rendering locally.</div></div>
+<div class="fieldgrid"><div class="field"><label for="format">VIDEO FORMAT</label><select id="format"><option value="9:16">Portrait · Reels / Shorts</option><option value="16:9">Landscape · YouTube</option></select></div><div class="field"><label for="sceneCount">ILLUSTRATED SCENES</label><select id="sceneCount"><option>5</option><option selected>6</option><option>7</option><option>8</option></select></div></div>
+<div class="field"><label for="videoTitle">PUBLISH TITLE</label><input id="videoTitle" maxlength="100" value="Who is competing for your attention?" required></div>
+<div class="field"><label for="description">YOUTUBE DESCRIPTION / SOURCE CREDIT</label><textarea id="description" rows="2">A short visual explanation of attention, incentives, and how to protect your focus.</textarea></div>
+<div class="fieldgrid"><div class="field"><label for="hashtags">HASHTAGS (WITHOUT #)</label><input id="hashtags" value="attention, psychology, focus"></div><div class="field"><label for="caption">SHORT-FORM CAPTION</label><input id="caption" maxlength="220" value="Your attention is valuable. Spend it on purpose."></div></div>
+<div class="sceneshead"><h4>Scene direction</h4><span id="sceneCountLabel">6 scenes · edit each one</span></div><div class="scenelist" id="sceneList"></div>
+<div class="formfoot"><small>One spoken beat + one visual idea per scene.</small><button class="btn primary" type="submit">Build storyboard ↗</button></div>
+</form>
+<div class="output" id="outputPanel" hidden><div class="outhead"><strong>storyboard.json</strong><span id="outputMeta">Ready to export</span></div><pre id="jsonPreview" aria-label="Storyboard JSON preview"></pre><div class="formfoot" style="padding:12px;margin:0"><button class="btn ghost" type="button" id="copyJson">Copy JSON</button><button class="btn primary" type="button" id="downloadJson">Download storyboard.json</button></div><div id="renderInstructions" style="padding:0 12px 13px;color:#929e8a;font-size:10px;line-height:1.6"></div></div>
+</div></div></section>
+<section class="shell section" id="local-render"><div class="sectionhead"><div><div class="kicker">From plan to MP4</div><h2>Take it from browser to renderer.</h2></div><p class="intro">The exported JSON is the handoff. Rendering stays local so FFmpeg, model files, intermediate assets, and OAuth credentials use your existing environment.</p></div>
+<div class="rendersteps"><article class="renderstep"><div class="stepnum">STEP 01</div><h3>Export the storyboard</h3><p>Download <code>storyboard.json</code>. Put it beside a folder called <code>images</code> with scene files named <code>scene_01.png</code>, <code>scene_02.png</code>, and so on. At least five illustrated images are required.</p></article><article class="renderstep"><div class="stepnum">STEP 02</div><h3>Run ReelGen locally</h3><p>Open a terminal in your ReelGen project. Install the dependencies and FFmpeg, and configure your chosen voice provider in <code>.env</code>.</p></article><article class="renderstep"><div class="stepnum">STEP 03</div><h3>Render your video</h3><p>Use the command below, replacing the source URL and file paths. The renderer assembles narration, scene images, captions, and the MP4.</p></article></div>
+<code class="command" id="command">python run.py render-external --article-url "https://example.com/article" --script "storyboard.json" --images-dir "images" --aspect-ratio 9:16</code>
+<div style="margin-top:13px;display:flex;gap:9px;flex-wrap:wrap"><button class="btn ghost" id="copyCommand" type="button">Copy render command</button><a class="btn ghost" href="https://github.com/jadiyeom/Reel-Gen" target="_blank" rel="noreferrer">Read setup guide ↗</a></div>
+<p style="font-size:10px;color:#828d7d;margin-top:13px">This command is a template. Replace the URL and paths with your own values. External rendering requires a valid HTTP(S) source URL for attribution, even when the storyboard was written from scratch.</p>
+</section>
+</main>
+<footer><div class="shell footerrow"><a class="brand" href="#" style="font-size:13px"><span class="mark" style="width:27px;height:27px;border-radius:8px"><svg viewBox="0 0 24 24" fill="none"><path d="M5 7.5h4.5v9H5zM14.5 5h4.5v14h-4.5zM9.5 10h5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>ReelGen</a><span>Plan in the browser. Render on your machine. Keep control of your pipeline.</span><a href="https://github.com/jadiyeom/Reel-Gen" target="_blank" rel="noreferrer">Open source repository ↗</a></div></footer>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+const narrations=[
+"Your attention is being auctioned off, one tiny interruption at a time.",
+"Every app competes for the same limited resource: the next few seconds of your life.",
+"The cost rarely feels large in the moment, which is exactly why it works.",
+"A quick glance becomes a habit when rewards arrive unpredictably.",
+"You don't need perfect discipline; you need fewer automatic invitations.",
+"Protect the first minute of your focus, and the rest gets easier.",
+"Make the distracting action harder to start and the important one easier to continue.",
+"Your attention is a budget. Spend it on purpose."
+];
+const visuals=[
+"Minimal editorial illustration: a small human figure beneath a floating glowing sphere, quiet paper texture, strong negative space, no text.",
+"Three oversized abstract app-like shapes reach toward one tiny glowing dot held by a simple character, restrained palette, no lettering.",
+"A tiny pebble drops into a huge ripple across a dark pool, cinematic close-up, one clear focal point, no text.",
+"A winding path of small glowing rewards leads a character in circles, graphic editorial illustration, no logos or readable UI.",
+"A hand closes a row of little glowing doors, leaving one calm open path, crisp shapes, high contrast, no text.",
+"A character protects a small pool of light while a busy abstract city blurs in the distance, no lettering.",
+"A simple switch moves a cluttered path into a clean open route, playful conceptual illustration, no signs or words.",
+"A quiet final frame: a single character looks toward a bright horizon, lots of negative space, hopeful and understated, no text."
+];
+let latestJson="";let toastTimer;
+const el=id=>document.getElementById(id);
+function toast(message){el("toast").textContent=message;el("toast").classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>el("toast").classList.remove("show"),2400)}
+function topicText(){return el("topic").value.trim()||"Untitled idea"}
+function renderScenes(){
+ const count=Number(el("sceneCount").value),list=el("sceneList");
+ const prior=[...list.querySelectorAll(".scenerow")].map(row=>({n:row.querySelector("[data-k=narration]").value,v:row.querySelector("[data-k=visual]").value}));
+ list.replaceChildren();el("sceneCountLabel").textContent=count+" scenes · edit each one";
+ for(let i=0;i<count;i++){
+  const row=document.createElement("div");row.className="scenerow";
+  const head=document.createElement("div");head.className="scenetitle";
+  const num=document.createElement("span");num.className="num";num.textContent=String(i+1).padStart(2,"0");
+  const title=document.createElement("strong");title.textContent=i===0?"The hook":i===count-1?"The takeaway":"Scene beat "+(i+1);
+  const small=document.createElement("small");small.textContent=i===0?"HERO SCENE":"SCENE "+String(i+1).padStart(2,"0");head.append(num,title,small);
+  const fields=document.createElement("div");fields.className="scenefields";
+  const a=document.createElement("div"),al=document.createElement("label"),at=document.createElement("textarea");al.textContent="VOICEOVER / NARRATION";al.htmlFor="narration-"+i;at.id="narration-"+i;at.dataset.k="narration";at.maxLength=600;at.value=prior[i]?.n??narrations[i];a.append(al,at);
+  const b=document.createElement("div"),bl=document.createElement("label"),bt=document.createElement("textarea");bl.textContent="VISUAL DIRECTION";bl.htmlFor="visual-"+i;bt.id="visual-"+i;bt.dataset.k="visual";bt.maxLength=1200;bt.value=prior[i]?.v??(visuals[i]+" Topic: "+topicText()+".");b.append(bl,bt);
+  fields.append(a,b);row.append(head,fields);list.append(row);
+ }
+}
+function slugify(s){return s.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,64)||"reelgen-storyboard"}
+function buildStoryboard(){
+ const topic=topicText(),source=el("sourceUrl").value.trim(),title=el("videoTitle").value.trim()||topic,description=el("description").value.trim(),caption=el("caption").value.trim()||title;
+ const hashtags=el("hashtags").value.split(/[,\s#]+/).map(s=>s.trim()).filter(Boolean);
+ const rows=[...el("sceneList").querySelectorAll(".scenerow")];
+ const scenes=rows.map((row,i)=>({index:i+1,scene_type:"image",image:"images/scene_"+String(i+1).padStart(2,"0")+".png",narration:row.querySelector("[data-k=narration]").value.trim(),image_prompt:row.querySelector("[data-k=visual]").value.trim(),motion_prompt:"",hero:i===0}));
+ if(scenes.some(s=>!s.narration||!s.image_prompt)){toast("Add narration and visual direction to every scene.");return null}
+ return {source_url:source,title:topic,topic,slug:slugify(topic),youtube_title:title,youtube_description:description,tiktok_caption:caption,x_caption:caption,instagram_caption:caption+(hashtags.length?"\n\n"+hashtags.map(h=>"#"+h).join(" "):""),hashtags,scenes,reelgen_settings:{aspect_ratio:el("format").value,target_scene_count:scenes.length}};
+}
+function showStoryboard(data){
+ latestJson=JSON.stringify(data,null,2);el("jsonPreview").textContent=latestJson;el("outputPanel").hidden=false;
+ el("outputMeta").textContent=data.scenes.length+" scenes · "+data.reelgen_settings.aspect_ratio;
+ el("renderInstructions").textContent=(data.source_url?"Source URL included. ":"No source URL yet; add one or pass --article-url when rendering. ")+"Add "+data.scenes.length+" image files to images/ using the exact filenames shown in the JSON.";
+ el("outputPanel").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"nearest"});
+}
+el("sceneCount").addEventListener("change",renderScenes);
+el("briefForm").addEventListener("submit",e=>{e.preventDefault();const data=buildStoryboard();if(data){showStoryboard(data);toast("Storyboard is ready to export.")}});
+el("copyJson").addEventListener("click",async()=>{
+ if(!latestJson)return;try{await navigator.clipboard.writeText(latestJson);toast("Storyboard JSON copied.")}catch{const x=document.createElement("textarea");x.value=latestJson;x.style.position="fixed";x.style.opacity="0";document.body.append(x);x.select();const ok=document.execCommand("copy");x.remove();toast(ok?"Storyboard JSON copied.":"Copy failed — download the JSON instead.")}
+});
+el("downloadJson").addEventListener("click",()=>{
+ if(!latestJson)return;const blob=new Blob([latestJson+"\n"],{type:"application/json;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="storyboard.json";document.body.append(a);a.click();a.remove();URL.revokeObjectURL(url);toast("Downloaded storyboard.json.")
+});
+el("copyCommand").addEventListener("click",async()=>{
+ const data=latestJson?JSON.parse(latestJson):null,source=data?.source_url||"https://example.com/article",format=data?.reelgen_settings?.aspect_ratio||el("format").value;
+ const command='python run.py render-external --article-url "'+source+'" --script "storyboard.json" --images-dir "images" --aspect-ratio '+format;
+ try{await navigator.clipboard.writeText(command);toast("Render command copied.")}catch{toast("Clipboard unavailable; copy the command shown on the page.")}
+});
+renderScenes();
+</script>
+</body>
+</html>
