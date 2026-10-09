@@ -218,6 +218,11 @@ def external_render():
             raise ValueError("Add a valid HTTP(S) source/article URL in the form or script.json.")
 
         workspace = _new_workspace(title)
+        # Unique output slugs prevent a rerender from overwriting a same-day video
+        # or inheriting another version's publishing history.
+        from pipeline.util import slugify
+        base_slug = slugify(str(raw_script.get("slug") or title))[:60] or "external-reel"
+        raw_script["slug"] = f"{base_slug}-{workspace.name[-8:]}"
         script_path = workspace / "script.json"
         script_path.write_text(json.dumps(raw_script, ensure_ascii=False, indent=2), encoding="utf-8")
         zip_path = workspace / "images-upload.zip"
