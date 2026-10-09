@@ -498,6 +498,104 @@ def publish_youtube(video: Path, social: dict, privacy_status: str = "private") 
     return result
 
 
+def _instagram_access_token() -> str:
+    """Load a long-lived Instagram Login token and refresh it before expiry when eligible.
+
+    Instagram Login refresh requires a still-valid long-lived token that is at least
+    24 hours old. A token file written after refresh takes precedence over .env until
+    the configured environment token is changed.
+    """
+    token_file = config.INSTAGRAM_TOKEN_FILE
+    saved = read_json(token_file) if token_file.is_file() else {}
+    env_token = str(config.INSTAGRAM_ACCESS_TOKEN or "").strip()
+    env_fingerprint = hashlib.sha256(env_token.encode("utf-8")).hexdigest() if env_token else ""
+    saved_fingerprint = str(saved.get("env_token_fingerprint") or "")
+    saved_token = str(saved.get("access_token") or "").strip()
+
+    # If .env was edited to replace a token, prefer that value over an older
+    # persisted refresh result.
+    if env_token and env_fingerprint != saved_fingerprint:
+        token = env_token
+        has_fresh_token_from_env = True
+    else:
+        token = saved_token or env_token
+        has_fresh_token_from_env = bool(env_token and not saved_token)
+
+    if not token:
+        raise RuntimeError(
+            "Set INSTAGRAM_ACCESS_TOKEN to an Instagram Login long-lived access token in .env."
+        )
+
+    refreshed_at = float(saved.get("refreshed_at") or 0)
+    refresh_interval = 7 * 24 * 60 * 60
+    should_refresh = has_fresh_token_from_env or not saved_token or time.time() - refreshed_at >= refresh_interval
+    if not should_refresh:
+        return token
+
+    try:
+        response = requests.get(
+            "https://graph.instagram.com/refresh_access_token",
+            params={"grant_type": "ig_refresh_token", "access_token": token},
+            timeout=30,
+        )
+        try:
+            payload = response.json()
+        except ValueError:
+            payload = {}
+    except requests.RequestException as exc:
+        log(f"Instagram token refresh request failed ({type(exc).__name__}); continuing with the saved token.")
+        return token
+
+    new_token = str(payload.get("access_token") or "").strip()
+    if response.ok and new_token:
+        token_record = {
+            "access_token": new_token,
+            "refreshed_at": time.time(),
+            "expires_in": int(payload.get("expires_in") or 0),
+            "env_token_fingerprint": env_fingerprint,
+        }
+        try:
+            write_json(token_file, token_record)
+        except OSError as exc:
+            log(f"Instagram token refreshed but could not be saved locally ({type(exc).__name__}); using it for this publish.")
+        else:
+            log("Instagram long-lived access token refreshed and saved locally.")
+        return new_token
+
+    error = payload.get("error", {})
+    if not isinstance(error, dict):
+        error = {}
+    message = str(error.get("message") or payload.get("error_description") or "unknown refresh error")
+    code = error.get("code")
+    lower_message = message.lower()
+
+    # Tokens less than 24 hours old cannot be refreshed yet; use the current token.
+    too_new = (
+        "24 hour" in lower_message
+        or "24-hour" in lower_message
+        or "at least 24" in lower_message
+        or "must be at least" in lower_message
+    )
+    if too_new:
+        log("Instagram token is not eligible for refresh yet; continuing with the current token.")
+        return token
+
+    expired_or_invalid = (
+        "expired" in lower_message
+        or "revoked" in lower_message
+        or ("invalid" in lower_message and "token" in lower_message)
+        or "not valid" in lower_message
+    )
+    if expired_or_invalid:
+        log("Instagram token refresh reports that the current token may be invalid; checking it with the publish API.")
+    else:
+        # This includes ambiguous OAuth errors such as code 190. A token that is
+        # too new to refresh may receive an OAuth error too, so don't block a valid
+        # token based on the refresh endpoint alone.
+        log(f"Instagram token refresh was unavailable ({response.status_code}: {message}); continuing with current token.")
+    return token
+
+
 def _instagram_request(method: str, url: str, **kwargs) -> dict:
     response = requests.request(method, url, timeout=60, **kwargs)
     try:
@@ -507,7 +605,15 @@ def _instagram_request(method: str, url: str, **kwargs) -> dict:
     if not response.ok or "error" in payload:
         err = payload.get("error", {})
         message = err.get("message") if isinstance(err, dict) else str(err)
-        raise RuntimeError(f"Instagram Graph API request failed ({response.status_code}): {message or 'unknown API error'}")
+        code = err.get("code") if isinstance(err, dict) else None
+        message_text = str(message or "unknown API error")
+        if str(code) == "190" or response.status_code == 401 or "access token has expired" in message_text.lower():
+            raise RuntimeError(
+                "Instagram rejected the access token as expired or invalid. "
+                "The automatic refresh was unable to recover it; generate a new Instagram Login "
+                "long-lived token and replace INSTAGRAM_ACCESS_TOKEN in .env."
+            )
+        raise RuntimeError(f"Instagram Graph API request failed ({response.status_code}): {message_text}")
     return payload
 
 
@@ -767,12 +873,10 @@ def _tunnel_instagram_video(video: Path) -> tuple[str, Callable[[], None]]:
 
 
 def publish_instagram(video: Path, social: dict, explicit_video_url: str = "") -> dict:
-    token = config.INSTAGRAM_ACCESS_TOKEN
     ig_user_id = config.INSTAGRAM_BUSINESS_ACCOUNT_ID
-    if not token:
-        raise RuntimeError("Set INSTAGRAM_ACCESS_TOKEN to the Instagram Login access token in .env.")
     if not ig_user_id:
         raise RuntimeError("Set INSTAGRAM_BUSINESS_ACCOUNT_ID in .env to your Instagram account ID.")
+    token = _instagram_access_token()
 
     video_url, delete_staged_video = _instagram_video_url(video, explicit_video_url)
     try:
