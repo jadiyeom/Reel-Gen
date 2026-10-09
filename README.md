@@ -240,7 +240,7 @@ The implementation follows the current [X media upload flow](https://docs.x.com/
 
 This started as a weekend project and is shared as-is for anyone to use, fork, or build on. Issues and PRs are welcome — auto-posting backends, new image/i2v models, extra stock sources, and caption styles are all great starting points.
 
-Want to contribute, collaborate, or just say hi? Reach out on **[LinkedIn](https://www.linkedin.com/in/abdullahnaveed0007/)**.
+Want to contribute, collaborate, or just say hi? Reach out on **[LinkedIn](https://www.linkedin.com/in/omjadiye/)**.
 
 ## 📄 License
 
