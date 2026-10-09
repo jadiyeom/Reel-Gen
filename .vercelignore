@@ -1,0 +1,24 @@
+# This deployment is the static hosted storyboard builder in index.html.
+# Keep the full Python rendering pipeline in the repository for local use, but
+# do not package it into the Vercel static deployment.
+.venv/
+venv/
+__pycache__/
+output/
+library/
+data/
+assets/
+pipeline/
+dashboard/
+prompts/
+templates/
+tests/
+requirements.txt
+requirements-gpu.txt
+run.py
+start.bat
+stop.bat
+kokoro_test.wav
+.env
+.env.*
+!.env.example
