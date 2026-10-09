@@ -44,6 +44,7 @@ X_API_BASE = "https://api.x.com/2"
 def _youtube_credentials(interactive: bool = True):
     try:
         from google.auth.transport.requests import Request
+        from google.auth.exceptions import RefreshError
         from google.oauth2.credentials import Credentials
         from google_auth_oauthlib.flow import InstalledAppFlow
     except ImportError as exc:
@@ -52,7 +53,22 @@ def _youtube_credentials(interactive: bool = True):
     if config.YOUTUBE_TOKEN_FILE.exists():
         creds = Credentials.from_authorized_user_file(str(config.YOUTUBE_TOKEN_FILE), YOUTUBE_SCOPE)
     if creds and creds.expired and creds.refresh_token:
-        creds.refresh(Request())
+        try:
+            creds.refresh(Request())
+        except RefreshError as exc:
+            detail = str(exc).lower()
+            invalid_grant = "invalid_grant" in detail or "expired or revoked" in detail
+            if not invalid_grant:
+                raise
+            if not interactive:
+                raise RuntimeError(
+                    "The saved YouTube OAuth token has expired or was revoked. "
+                    "Run `python run.py connect-youtube` to sign in again."
+                ) from exc
+            # A stale refresh token cannot be repaired; let the interactive flow
+            # obtain a fresh grant. Keep the old file until new consent succeeds.
+            log("Saved YouTube refresh token expired or was revoked; starting a fresh Google sign-in.")
+            creds = None
     if not creds or not creds.valid:
         if not interactive:
             raise RuntimeError("YouTube is not connected. Run `python run.py connect-youtube` first.")
