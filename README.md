@@ -22,9 +22,9 @@ It works **two ways**, and you can mix them per video:
 
 ## Deploy the hosted storyboard builder
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fjadiyeom%2FReel-Gen&project-name=reelgen)
+[Open Vercel New Project](https://vercel.com/new)
 
-Import this repository into Vercel and deploy the root directory. The hosted page is a static, browser-based storyboard planner; **it does not run AI generation, render MP4s, or publish to social platforms on Vercel**. It requires no environment variables and does not send your storyboard to a server. Export the JSON and use it with your local ReelGen renderer.
+In Vercel, choose **Add New → Project**, import the existing `jadiyeom/Reel-Gen` GitHub repository (do not use a repository-cloning template), keep the root directory as `/`, and deploy. The hosted page is a static, browser-based storyboard planner; **it does not run AI generation, render MP4s, or publish to social platforms on Vercel**. It requires no environment variables and does not send your storyboard to a server. Export the JSON and use it with your local ReelGen renderer.
 
 The full Python pipeline remains available locally. A truly hosted render service needs durable object storage and a persistent job worker/queue, and should be added as a separate deployment layer rather than relying on ephemeral serverless disk.
 
