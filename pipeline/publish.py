@@ -554,8 +554,12 @@ def _instagram_access_token() -> str:
             "expires_in": int(payload.get("expires_in") or 0),
             "env_token_fingerprint": env_fingerprint,
         }
-        write_json(token_file, token_record)
-        log("Instagram long-lived access token refreshed and saved locally.")
+        try:
+            write_json(token_file, token_record)
+        except OSError as exc:
+            log(f"Instagram token refreshed but could not be saved locally ({type(exc).__name__}); using it for this publish.")
+        else:
+            log("Instagram long-lived access token refreshed and saved locally.")
         return new_token
 
     error = payload.get("error", {})
@@ -577,22 +581,18 @@ def _instagram_access_token() -> str:
         return token
 
     expired_or_invalid = (
-        code == 190
-        or "expired" in lower_message
+        "expired" in lower_message
         or "revoked" in lower_message
-        or "invalid token" in lower_message
+        or ("invalid" in lower_message and "token" in lower_message)
         or "not valid" in lower_message
     )
     if expired_or_invalid:
-        raise RuntimeError(
-            "Instagram's long-lived access token appears expired or revoked and could not be refreshed. "
-            "Generate a new Instagram Login long-lived token, replace INSTAGRAM_ACCESS_TOKEN in .env, "
-            "then retry. If data/instagram_access_token.json exists, the changed .env token will take precedence."
-        )
-
-    # Some token types or permissions may not support this refresh flow. Let the
-    # standard publish API determine whether the current token remains usable.
-    log(f"Instagram token refresh was unavailable ({response.status_code}: {message}); continuing with current token.")
+        log("Instagram token refresh reports that the current token may be invalid; checking it with the publish API.")
+    else:
+        # This includes ambiguous OAuth errors such as code 190. A token that is
+        # too new to refresh may receive an OAuth error too, so don't block a valid
+        # token based on the refresh endpoint alone.
+        log(f"Instagram token refresh was unavailable ({response.status_code}: {message}); continuing with current token.")
     return token
 
 
