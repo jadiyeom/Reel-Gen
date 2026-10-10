@@ -184,6 +184,7 @@ def external_render():
 
     script_upload = request.files.get("script")
     zip_upload = request.files.get("images_zip")
+    logo_upload = request.files.get("logo")
     if not script_upload or not script_upload.filename:
         return jsonify({"error": "Choose a script.json file."}), 400
     if Path(script_upload.filename).suffix.lower() != ".json":
@@ -192,6 +193,14 @@ def external_render():
         return jsonify({"error": "Choose a ZIP containing the scene images."}), 400
     if Path(zip_upload.filename).suffix.lower() != ".zip":
         return jsonify({"error": "The image bundle must be a .zip file."}), 400
+    if logo_upload and logo_upload.filename and Path(logo_upload.filename).suffix.lower() != ".png":
+        return jsonify({"error": "The logo must be a PNG file (transparent backgrounds are supported)."}), 400
+    # The marker distinguishes an intentionally unchecked UI toggle from older API
+    # callers that don't send the new field; those callers keep the default-on behavior.
+    if "append_follow_card_present" in request.form:
+        append_follow_card = request.form.get("append_follow_card", "").lower() in {"on", "true", "1", "yes"}
+    else:
+        append_follow_card = request.form.get("append_follow_card", "on").lower() in {"on", "true", "1", "yes"}
     aspect_ratio = (request.form.get("aspect_ratio") or "9:16").strip()
     if aspect_ratio not in {"9:16", "16:9"}:
         return jsonify({"error": "Aspect ratio must be 9:16 or 16:9."}), 400
@@ -225,6 +234,22 @@ def external_render():
         raw_script["slug"] = f"{base_slug}-{workspace.name[-8:]}"
         script_path = workspace / "script.json"
         script_path.write_text(json.dumps(raw_script, ensure_ascii=False, indent=2), encoding="utf-8")
+        logo_path = None
+        if logo_upload and logo_upload.filename:
+            logo_path = workspace / "brand-logo.png"
+            logo_upload.save(logo_path)
+            if logo_path.stat().st_size > 10 * 1024 * 1024:
+                raise ValueError("The logo must be smaller than 10 MB.")
+            try:
+                from PIL import Image as PILImage
+                with PILImage.open(logo_path) as logo_image:
+                    if logo_image.format != "PNG":
+                        raise ValueError("The uploaded logo is not a valid PNG image.")
+                    logo_image.verify()
+            except ValueError:
+                raise
+            except Exception as exc:
+                raise ValueError("The uploaded logo is not a valid PNG image.") from exc
         zip_path = workspace / "images-upload.zip"
         zip_upload.save(zip_path)
         image_dir = workspace / "images"
@@ -252,7 +277,12 @@ def external_render():
         set_stage("Validating source and preparing scenes")
         with config.video_format(aspect_ratio):
             set_stage("Rendering voice, captions and video")
-            final = render_external(article_url, script_path, image_dir, render_captions=render_captions)
+            final = render_external(
+                article_url, script_path, image_dir,
+                render_captions=render_captions,
+                append_follow_card=append_follow_card,
+                logo_path=logo_path,
+            )
         vid = Path(final).parent.name
         set_stage("done", vid=vid, final=f"/media/{vid}/final.mp4",
                   review=f"/v/{vid}", title=parsed_title or parsed_script.topic)
@@ -261,6 +291,7 @@ def external_render():
     return jsonify({
         "job": job_id, "title": parsed_title or parsed_script.topic,
         "scene_count": len(parsed_script.scenes), "image_count": len(resolved_images),
+        "follow_end_card": append_follow_card,
         "message": "Assets validated. Rendering has started.",
     })
 
