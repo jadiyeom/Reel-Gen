@@ -203,8 +203,14 @@ def _article_metadata(url: str, fallback_title: str) -> dict:
                 "site_name": parsed.hostname.removeprefix("www."), "author": "", "published": ""}
 
 
-def render_external(article_url: str, script_path: Path, images_dir: Path | None = None,
-                    render_captions: bool = True) -> Path:
+def render_external(
+    article_url: str,
+    script_path: Path,
+    images_dir: Path | None = None,
+    render_captions: bool = True,
+    append_follow_card: bool = True,
+    logo_path: Path | None = None,
+) -> Path:
     if config.GENERATION_MODE != "external":
         raise RuntimeError("render-external requires GENERATION_MODE=external")
     script, source_images, storyboard_url, title = load_external_input(script_path, images_dir)
@@ -249,6 +255,11 @@ def render_external(article_url: str, script_path: Path, images_dir: Path | None
     video.save()
     state.record_video(video, script.topic, "rendering")
     final = assemble(video, script, saved_images, audio_info, want_captions=render_captions)
+    if append_follow_card:
+        from .end_card import append_follow_card_to_video
+
+        final = append_follow_card_to_video(final, logo_path=logo_path)
+    video.manifest["follow_end_card"] = bool(append_follow_card)
     video.mark("complete", final=str(final))
     state.record_video(video, script.topic, "complete")
     if config.AUTO_PUBLISH_PLATFORMS:

@@ -38,7 +38,7 @@ Run ReelGen locally (the renderer is not run on Vercel). On Windows, launch it w
 
 On macOS/Linux, with `.venv` activated, run `python run.py serve`.
 
-Open [http://127.0.0.1:5000/external](http://127.0.0.1:5000/external). Upload your `script.json` and a ZIP containing its scene PNG/JPG/WEBP files, select the aspect ratio, and choose **Validate & render video**. The script should include a source URL (`source_url` or `article_url`), or enter it in the form. The ZIP can contain an `images/` folder, but image filenames must be unique. The dashboard validates the storyboard/images, runs the existing external-asset pipeline in a background job, then shows an MP4 preview and platform copy.
+Open [http://127.0.0.1:5000/external](http://127.0.0.1:5000/external). Upload your `script.json` and a ZIP containing its scene PNG/JPG/WEBP files, select the aspect ratio, and choose **Validate & render video**. The script should include a source URL (`source_url` or `article_url`), or enter it in the form. The ZIP can contain an `images/` folder, but image filenames must be unique. A branded **“Follow for more” end card is enabled by default**; uncheck its toggle to skip it. You can upload a transparent PNG logo with the render (or place one at `assets/logo/logo.png` for the local fallback). The dashboard validates the storyboard/images, runs the local pipeline in a background job, then shows an MP4 preview and platform copy.
 
 From the same page, review the render, select YouTube Shorts, Instagram Reels, Facebook Reels, and/or X, then confirm **Publish to selected accounts**. Account authorization is a one-time setup; buttons are provided for YouTube, Facebook, X, and Google Drive staging. Instagram requires `INSTAGRAM_BUSINESS_ACCOUNT_ID` and a valid token; a refreshed token is saved locally in `data/instagram_access_token.json` and can be reused instead of the original `.env` token. Credentials are not displayed in the UI. YouTube visibility is selectable; other platforms follow their API/account defaults. Already-published platforms are skipped to reduce accidental duplicates. TikTok posting is not implemented in the current publisher, but its caption is shown for manual upload.
 
@@ -174,7 +174,7 @@ The **clip library** ties it together: every generated/fetched clip is embedded 
 ## 💧 Watermark & outro
 
 - **Watermark** (on by default): drop a square `assets/logo/logo.png` and it's overlaid bottom-right on every video; add `BRAND_DISCLAIMER=` for a footer line. Set `WATERMARK=false` to disable. With no logo and no disclaimer, nothing is stamped.
-- **Outro / end card** (off by default): set `OUTRO=true` with your `BRAND_NAME`, `BRAND_URL`, `BRAND_TAGLINE`, and `logo.png` to stitch a 3-second branded end card (with a spoken call-to-action) onto every video.
+- **Branded outro / end card**: the general CLI pipeline keeps its optional spoken outro off by default; set `OUTRO=true` with `BRAND_NAME`, `BRAND_URL`, `BRAND_TAGLINE`, and `logo.png` to enable it. The local upload/render dashboard separately appends a silent 3.6-second **“Follow for more”** end card by default; toggle it off per render, and upload a PNG logo or use `assets/logo/logo.png` as the fallback. The duration follows `OUTRO_SECONDS`.
 
 ## ⚙️ Configuration
 

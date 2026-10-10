@@ -23,10 +23,15 @@ _env = Environment(
 )
 
 
-def _logo_data_uri() -> str:
-    if config.LOGO_PNG.exists():
-        enc = base64.b64encode(config.LOGO_PNG.read_bytes()).decode()
-        return f"data:image/png;base64,{enc}"
+def _logo_data_uri(logo_path: Path | None = None) -> str:
+    """Return a data URI for an uploaded logo, or the configured default logo."""
+    source = Path(logo_path) if logo_path is not None else config.LOGO_PNG
+    if source.is_file():
+        import mimetypes
+
+        mime_type = mimetypes.guess_type(source.name)[0] or "image/png"
+        enc = base64.b64encode(source.read_bytes()).decode()
+        return f"data:{mime_type};base64,{enc}"
     return ""
 
 
@@ -62,7 +67,12 @@ def render_watermark(out: Path = None) -> Path | None:
     return out
 
 
-def render_outro_card(out: Path = None) -> Path:
+def render_outro_card(
+    out: Path = None,
+    logo_path: Path | None = None,
+    cta: str | None = None,
+    name: str | None = None,
+) -> Path:
     """Render the true-portrait end card (logo + brand name + tagline + CTA)."""
     from playwright.sync_api import sync_playwright
 
@@ -71,8 +81,10 @@ def render_outro_card(out: Path = None) -> Path:
     html = _env.get_template("outro_card.html").render(
         w=config.WIDTH, h=config.HEIGHT, display_font=b["display_font"],
         body_font=b["body_font"], accent=b["accent"], accent_2=b["accent_2"],
-        text=b["text"], muted=b["muted"], name=b["name"], url=b["url"],
-        tagline=b["tagline"], logo_data=_logo_data_uri(),
+        text=b["text"], muted=b["muted"],
+        name=name or b["name"], url=b["url"],
+        tagline=b["tagline"], logo_data=_logo_data_uri(logo_path),
+        cta=cta or b["url"] or "Follow for more",
     )
     with sync_playwright() as p:
         browser = p.chromium.launch(args=["--force-color-profile=srgb"])

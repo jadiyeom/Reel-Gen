@@ -31,7 +31,12 @@
 <form id="renderForm"><div class="upload-grid">
 <label class="drop" id="scriptDrop"><strong>↳ Storyboard JSON</strong><small>script.json · scene order, narration, source URL and social copy.</small><input required type="file" name="script" id="scriptFile" accept=".json,application/json"><small id="scriptName">No file selected</small></label>
 <label class="drop" id="imagesDrop"><strong>↳ Scene images ZIP</strong><small>One ZIP with illustrations. A folder like images/scene_01.png is fine.</small><input required type="file" name="images_zip" id="imagesFile" accept=".zip,application/zip"><small id="imagesName">No file selected</small></label>
-</div><label class="field" for="articleUrl">Source article URL</label><input type="text" name="article_url" id="articleUrl" placeholder="Read from script.json if already included">
+</div>
+<div class="upload-grid" style="margin-top:16px">
+<label class="drop" id="logoDrop"><strong>↳ Brand logo · optional</strong><small>Upload your PNG logo. Transparent backgrounds work best; if omitted, ReelGen uses assets/logo/logo.png when available.</small><input type="file" name="logo" id="logoFile" accept=".png,image/png"><small id="logoName">No logo selected</small></label>
+<div style="display:flex;align-items:center;padding:22px"><div><label class="toggle"><input type="hidden" name="append_follow_card_present" value="1"><input type="checkbox" name="append_follow_card" id="appendFollowCard" value="on" checked> Add a final “Follow for more” scene</label><p class="micro" style="margin:8px 0 0 25px">On by default. Uses your uploaded logo and appends a short branded end card after the final story scene.</p></div></div>
+</div>
+<label class="field" for="articleUrl">Source article URL</label><input type="text" name="article_url" id="articleUrl" placeholder="Read from script.json if already included">
 <div class="upload-grid"><div><label class="field" for="aspectRatio">Video format</label><select id="aspectRatio" name="aspect_ratio"><option value="9:16">9:16 · Shorts / Reels</option><option value="16:9">16:9 · YouTube landscape</option></select></div><div style="display:flex;align-items:flex-end;padding-bottom:3px"><label class="toggle"><input type="checkbox" name="captions" id="captions" checked> Burn in timed captions</label></div></div>
 <div class="row" style="margin-top:20px"><button class="btn" type="submit" id="renderButton">✦ Validate &amp; render video</button><span class="micro">Uses the local Python pipeline and TTS backend configured in .env.</span></div></form>
 <div id="renderStatus" class="status hidden" aria-live="polite"></div><div id="renderProgress" class="progress-shell hidden"><span id="renderProgressBar"></span></div></section>
@@ -57,7 +62,8 @@ function setProgress(id,bar,n){$(id).classList.remove('hidden');$(bar).style.wid
 function setFileLabel(input,label){const f=input.files[0];$(label).textContent=f?f.name+' · '+(f.size/1024/1024).toFixed(1)+' MB':'No file selected';}
 $('scriptFile').addEventListener('change',()=>setFileLabel($('scriptFile'),'scriptName'));
 $('imagesFile').addEventListener('change',()=>setFileLabel($('imagesFile'),'imagesName'));
-[['scriptDrop','scriptFile','scriptName'],['imagesDrop','imagesFile','imagesName']].forEach(row=>{
+$('logoFile').addEventListener('change',()=>setFileLabel($('logoFile'),'logoName'));
+[['scriptDrop','scriptFile','scriptName'],['imagesDrop','imagesFile','imagesName'],['logoDrop','logoFile','logoName']].forEach(row=>{
  const zone=$(row[0]);zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('drag')});
  zone.addEventListener('dragleave',()=>zone.classList.remove('drag'));
  zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('drag');if(e.dataTransfer.files.length){$(row[1]).files=e.dataTransfer.files;setFileLabel($(row[1]),row[2]);}});
@@ -82,7 +88,8 @@ $('renderForm').addEventListener('submit',async e=>{
  try{
   const response=await fetch('/api/external/render',{method:'POST',body:new FormData($('renderForm'))});const data=await response.json();
   if(!response.ok)throw new Error(data.error||'Upload failed');
-  setStatus('renderStatus',data.message+' '+data.image_count+' images, '+data.scene_count+' scenes. Job: '+data.job);
+  const endCardNote = data.follow_end_card ? ' + Follow for more end card' : '';
+  setStatus('renderStatus',data.message+' '+data.image_count+' images, '+data.scene_count+' scenes'+endCardNote+'. Job: '+data.job);
   await pollJob(data.job,async job=>{
    if(!job.vid)throw new Error('Render finished without a video ID.');activeVideoId=job.vid;
    $('resultPanel').classList.remove('hidden');$('publishPanel').classList.remove('hidden');
