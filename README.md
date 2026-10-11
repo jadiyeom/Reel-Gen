@@ -49,7 +49,7 @@ Keep the dashboard bound to localhost. This UI is intended for your own computer
 - **Topic → finished video**, end to end, in one command.
 - **Two visual modes:** AI generation (fal Flux + Wan) and/or free stock footage (Pexels/Pixabay).
 - **Reusable clip library** with semantic matching — reuse a good shot across videos instead of paying to regenerate it.
-- **Local Kokoro voiceover by default** (`af_heart`); OpenAI TTS is optional.
+- **Local Chatterbox Turbo voiceover by default** (conditioned on your reference recording), with Kokoro retained as the automatic fallback; OpenAI TTS is optional.
 - **Word-by-word karaoke captions** auto-aligned with `faster-whisper`.
 - **Music bed** with automatic ducking under the voice.
 - **Optional watermark** (your logo + disclaimer) and an **optional branded outro / end card**.
@@ -65,7 +65,7 @@ Keep the dashboard bound to localhost. This UI is intended for your own computer
 topic ─▶ script (OpenAI, structured JSON)
       ─▶ visuals:  match clip library ──hit──▶ reuse clip
                                      └─miss─▶ generate (Flux image ─▶ Wan motion) ─▶ add to library
-      ─▶ voiceover (local Kokoro by default; optional OpenAI TTS)
+      ─▶ voiceover (local Chatterbox Turbo by default; Kokoro fallback; optional OpenAI TTS)
       ─▶ captions (faster-whisper, word-level)
       ─▶ assemble (ffmpeg): Ken Burns / motion + music + watermark + outro
       ─▶ output/{date}-{slug}/final.mp4  +  per-platform titles/descriptions/hashtags
@@ -139,7 +139,7 @@ If that check reports that `kokoro` is missing, install it into the project envi
 .\.venv\Scripts\python.exe -m pip install "kokoro>=0.9.4"
 ```
 
-The default voice settings are `TTS_BACKEND=kokoro`, `KOKORO_VOICE=af_heart`, `KOKORO_SPEED=1.0`, and `KOKORO_LANG=en-us`. You can set or override them in your local `.env`. The first speech run may load/download model assets and take longer than subsequent runs.
+The default voice backend is `TTS_BACKEND=chatterbox`. Set `CHATTERBOX_PYTHON` to the Python executable in your Chatterbox Turbo environment and `CHATTERBOX_REFERENCE_AUDIO` to your reference recording. The default paths in `.env.example` match the test setup used during development; change them if your files live elsewhere. ReelGen keeps the Chatterbox model in its separate environment and loads it once per render. If Chatterbox cannot start or a scene fails, that scene is generated with Kokoro instead. To force Kokoro for all scenes, set `TTS_BACKEND=kokoro`; `KOKORO_VOICE=af_heart`, `KOKORO_SPEED=1.0`, and `KOKORO_LANG=en-us` configure that fallback. The first Chatterbox run may load/download model assets and take longer than subsequent runs.
 
 To test speech separately from the dashboard:
 
@@ -189,8 +189,8 @@ Everything is environment-driven — see [`.env.example`](.env.example) for the 
 | `ANIMATE` | `none` | `none` (free Ken Burns), `all`, or `N` |
 | `CONTENT_NICHE` | – | Focus the writer (e.g. `personal finance`) |
 | `SCRIPT_PROMPT` | – | Swap in a custom writer preset from `prompts/presets/` |
-| `TTS_BACKEND` | `kokoro` | `kokoro` (local) or explicitly `openai` |
-| `KOKORO_VOICE` | `af_heart` | Local Kokoro voice pack |
+| `TTS_BACKEND` | `chatterbox` | `chatterbox` (local, reference-conditioned), `kokoro` fallback, `openai`, or `silent` |
+| `CHATTERBOX_PYTHON` | Chatterbox test venv | Python executable for the separate Chatterbox environment |\n| `CHATTERBOX_REFERENCE_AUDIO` | `D:\\AI\\chatterbox-test\\reference.mp3` | Reference recording for Chatterbox voice conditioning |\n| `KOKORO_VOICE` | `af_heart` | Local Kokoro fallback voice pack |
 | `KOKORO_SPEED` | `1.0` | Kokoro speaking speed |
 | `KOKORO_LANG` | `en-us` | Kokoro language |
 | `TTS_VOICE` | `onyx` | Voice used by the optional OpenAI TTS backend |
