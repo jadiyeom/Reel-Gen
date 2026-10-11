@@ -104,7 +104,7 @@ def synthesize(audio_dir: Path, script: Script) -> list[dict]:
                 except OSError:
                     reference_signature = reference
             base_parts = (
-                text, requested_backend, config.TTS_MODEL, config.TTS_VOICE,
+                text, backend, requested_backend, config.TTS_MODEL, config.TTS_VOICE,
                 config.TTS_INSTRUCTIONS, str(config.SPEECH_TEMPO),
                 config.KOKORO_VOICE, str(config.KOKORO_SPEED),
                 config.KOKORO_LANG, config.KOKORO_REPO_ID, reference_signature,
