@@ -121,7 +121,7 @@ METADATA_MODEL = "gpt-4o-mini"
 
 TTS_MODEL = "gpt-4o-mini-tts"
 TTS_VOICE = os.getenv("TTS_VOICE", "onyx")
-TTS_BACKEND = os.getenv("TTS_BACKEND", "kokoro").strip().lower()  # kokoro | openai | silent
+TTS_BACKEND = os.getenv("TTS_BACKEND", "chatterbox").strip().lower()  # chatterbox | kokoro fallback | openai | silent
 KOKORO_VOICE = os.getenv("KOKORO_VOICE", "af_heart").strip()
 KOKORO_SPEED = float(os.getenv("KOKORO_SPEED", "1.0"))
 KOKORO_LANG = os.getenv("KOKORO_LANG", "en-us").strip().lower()
