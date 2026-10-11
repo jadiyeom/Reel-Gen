@@ -152,8 +152,16 @@ def transcribe_words(audio_path: Path) -> list[dict]:
     if config.WHISPER_DEVICE == "cuda":
         try:
             return _run_whisper(audio_path, "cuda", "float16")
-        except Exception as e:  # noqa: BLE001 - CUDA libs (cublas/cudnn) not present
-            log(f"whisper cuda unavailable ({type(e).__name__}); falling back to cpu")
+        except Exception as e:  # noqa: BLE001 - CTranslate2 CUDA DLL/runtime failures
+            # Include the actual loader/runtime message: on Windows this usually
+            # identifies the missing cuBLAS/cuDNN DLL or an unsupported runtime.
+            detail = " ".join(str(e).split())
+            log(
+                f"whisper cuda unavailable ({type(e).__name__}: {detail}); "
+                "falling back to cpu. For GPU captions on Windows, install the "
+                "CUDA 12.x runtime libraries and cuDNN 9, ensure their bin folders "
+                "are on PATH, then restart the terminal/dashboard."
+            )
     return _run_whisper(audio_path, "cpu", "int8")
 
 
