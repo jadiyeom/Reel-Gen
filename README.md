@@ -149,6 +149,17 @@ To test speech separately from the dashboard:
 
 If rendering appears stuck, check the terminal running the dashboard for the actual error before clicking **Validate & render video** again. A successful Kokoro import test only checks the environment; the speech test confirms it can generate audio.
 
+### Windows: enable GPU captions with faster-whisper
+
+The project defaults to `WHISPER_DEVICE=cuda`, but `faster-whisper` uses **CTranslate2**, not PyTorch, for inference. Having an NVIDIA driver or a CUDA-enabled PyTorch install alone does not guarantee Whisper's CUDA libraries are available. On Windows, GPU inference needs compatible **CUDA 12.x / cuBLAS** and **cuDNN 9** runtime DLLs available on `PATH`.
+
+1. Check that `nvidia-smi` detects your GPU.
+2. Install the CUDA 12.x runtime and cuDNN 9 compatible with your installed `faster-whisper` / CTranslate2 version. Ensure the folders containing `cublas64_12.dll` and cuDNN DLLs are on `PATH`.
+3. Close and reopen PowerShell and restart the ReelGen dashboard; a running process will not inherit PATH changes.
+4. Run a short render. If CUDA still fails, ReelGen now logs the actual exception text, which should identify the missing DLL or runtime mismatch.
+
+To deliberately use CPU captions, set `WHISPER_DEVICE=cpu` in `.env`. Leave it as `cuda` to try GPU first and retain the automatic CPU fallback if CUDA cannot initialize.
+
 ### The local review dashboard
 
 `python run.py serve` opens a local web app where you can:
