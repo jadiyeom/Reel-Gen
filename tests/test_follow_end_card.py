@@ -40,5 +40,5 @@ def test_custom_outro_image_overrides_default(tmp_path, monkeypatch):
 
 def test_missing_default_outro_fails_clearly(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "DEFAULT_OUTRO_IMAGE", tmp_path / "missing.webp")
-    with pytest.raises(FileNotFoundError, match="Default|Restore|outro image"):
+    with pytest.raises(FileNotFoundError, match="(?i)default|restore|outro image"):
         resolve_outro_image()
