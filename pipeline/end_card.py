@@ -27,7 +27,7 @@ def append_follow_card_to_video(video_path: Path, logo_path: Path | None = None)
     fade = min(0.3, duration / 4)
     brand_name = str(config.BRAND.get("name") or "").strip()
     if not brand_name or brand_name.lower() == "your brand":
-        brand_name = "ReelGen"
+        brand_name = "Backspace"
 
     render_outro_card(
         out=card_path,
