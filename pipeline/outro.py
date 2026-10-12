@@ -34,9 +34,10 @@ def build_outro_vo() -> None:
 
 def build_outro(force: bool = False):
     out = config.PREBUILT_OUTRO
-    if out.exists() and not force:
-        return out
-    step("Build outro (once)")
+    # Always rebuild from the selected Backspace image. An older cached MP4
+    # may contain the retired HTML branding card, so reusing it would resurrect
+    # the very outro this image-based flow replaces.
+    step("Build image outro")
 
     image = config.DEFAULT_OUTRO_IMAGE
     if not image.is_file():
