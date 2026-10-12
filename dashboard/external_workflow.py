@@ -185,6 +185,7 @@ def external_render():
     script_upload = request.files.get("script")
     zip_upload = request.files.get("images_zip")
     logo_upload = request.files.get("logo")
+    outro_upload = request.files.get("outro_image")
     if not script_upload or not script_upload.filename:
         return jsonify({"error": "Choose a script.json file."}), 400
     if Path(script_upload.filename).suffix.lower() != ".json":
@@ -195,6 +196,8 @@ def external_render():
         return jsonify({"error": "The image bundle must be a .zip file."}), 400
     if logo_upload and logo_upload.filename and Path(logo_upload.filename).suffix.lower() != ".png":
         return jsonify({"error": "The logo must be a PNG file (transparent backgrounds are supported)."}), 400
+    if outro_upload and outro_upload.filename and Path(outro_upload.filename).suffix.lower() not in _IMAGE_SUFFIXES:
+        return jsonify({"error": "The custom outro must be a PNG, JPG, JPEG, or WEBP image."}), 400
     # The marker distinguishes an intentionally unchecked UI toggle from older API
     # callers that don't send the new field; those callers keep the default-on behavior.
     if "append_follow_card_present" in request.form:
@@ -250,6 +253,18 @@ def external_render():
                 raise
             except Exception as exc:
                 raise ValueError("The uploaded logo is not a valid PNG image.") from exc
+        outro_image_path = None
+        if outro_upload and outro_upload.filename:
+            outro_suffix = Path(outro_upload.filename).suffix.lower()
+            outro_image_path = workspace / f"custom-outro{outro_suffix}"
+            outro_upload.save(outro_image_path)
+            if outro_image_path.stat().st_size > 10 * 1024 * 1024:
+                raise ValueError("The custom outro image must be smaller than 10 MB.")
+            try:
+                with Image.open(outro_image_path) as outro_image:
+                    outro_image.verify()
+            except Exception as exc:  # noqa: BLE001
+                raise ValueError("The custom outro is not a valid image.") from exc
         zip_path = workspace / "images-upload.zip"
         zip_upload.save(zip_path)
         image_dir = workspace / "images"
@@ -282,6 +297,7 @@ def external_render():
                 render_captions=render_captions,
                 append_follow_card=append_follow_card,
                 logo_path=logo_path,
+                outro_image_path=outro_image_path,
             )
         vid = Path(final).parent.name
         set_stage("done", vid=vid, final=f"/media/{vid}/final.mp4",

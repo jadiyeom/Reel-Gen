@@ -160,7 +160,7 @@ def _outro_seconds() -> float:
 
 def assemble(video, script: Script, scene_images: dict[int, Path],
              audio_info: list[dict], motion_clips: dict[int, Path] | None = None,
-             want_captions: bool = True) -> Path:
+             want_captions: bool = True, watermark_logo_path: Path | None = None) -> Path:
     step("Assemble")
     work = video.dir / "work"
     work.mkdir(exist_ok=True)
@@ -185,16 +185,20 @@ def assemble(video, script: Script, scene_images: dict[int, Path],
     _concat(scene_clips, body, work, "scenes.txt")
 
     # Optional static watermark (logo bottom-right + disclaimer) — overlaid so it
-    # never zooms. Skipped if disabled, if there's nothing to show, or if it fails.
+    # never zooms. A per-render uploaded logo gets its own overlay, not an outro card.
     body_branded = body
     if config.ENABLE_WATERMARK:
         try:
             from .cards import render_watermark
-            if not config.WATERMARK_PNG.exists():
+            watermark_path = config.WATERMARK_PNG
+            if watermark_logo_path is not None:
+                watermark_path = work / "watermark_uploaded_logo.png"
+                render_watermark(out=watermark_path, logo_path=watermark_logo_path)
+            elif not watermark_path.exists():
                 render_watermark()
-            if config.WATERMARK_PNG.exists():
+            if watermark_path.exists():
                 body_branded = work / "body_branded.mp4"
-                _overlay_watermark(body, config.WATERMARK_PNG, body_branded)
+                _overlay_watermark(body, watermark_path, body_branded)
         except Exception as e:  # noqa: BLE001
             log(f"watermark skipped ({e})")
             body_branded = body
@@ -361,6 +365,11 @@ def refresh_scene(video, script: Script, scene_index: int) -> Path:
             branded = work / "body_branded.mp4"
             _overlay_watermark(body, config.WATERMARK_PNG, branded)
     visuals = work / "visuals.mp4"
+    if config.ENABLE_OUTRO:
+        # Refresh the cached outro from the Backspace image so a scene edit
+        # cannot re-introduce an old generated HTML branding card.
+        from .outro import build_outro
+        build_outro(force=True)
     if config.ENABLE_OUTRO and config.PREBUILT_OUTRO.exists():
         outro = work / "existing_outro.mp4"
         content_dur = float(timeline["duration"])

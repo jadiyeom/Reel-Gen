@@ -33,9 +33,10 @@
 <label class="drop" id="imagesDrop"><strong>↳ Scene images ZIP</strong><small>One ZIP with illustrations. A folder like images/scene_01.png is fine.</small><input required type="file" name="images_zip" id="imagesFile" accept=".zip,application/zip"><small id="imagesName">No file selected</small></label>
 </div>
 <div class="upload-grid" style="margin-top:16px">
-<label class="drop" id="logoDrop"><strong>↳ Brand logo · optional</strong><small>Upload your PNG logo. Transparent backgrounds work best; if omitted, ReelGen uses assets/logo/logo.png when available.</small><input type="file" name="logo" id="logoFile" accept=".png,image/png"><small id="logoName">No logo selected</small></label>
-<div style="display:flex;align-items:center;padding:22px"><div><label class="toggle"><input type="hidden" name="append_follow_card_present" value="1"><input type="checkbox" name="append_follow_card" id="appendFollowCard" value="on" checked> Add a final “Follow for more” scene</label><p class="micro" style="margin:8px 0 0 25px">On by default. Uses your uploaded logo and appends a short branded end card after the final story scene.</p></div></div>
+<label class="drop" id="logoDrop"><strong>↳ Watermark logo · optional</strong><small>Upload a PNG logo to overlay on the reel. This is separate from the outro; transparent backgrounds work best.</small><input type="file" name="logo" id="logoFile" accept=".png,image/png"><small id="logoName">No file selected</small></label>
+<label class="drop" id="outroDrop"><strong>↳ Custom outro image · optional</strong><small>Upload PNG, JPG, or WEBP to replace the default Backspace robot outro. Leave empty to use the default artwork.</small><input type="file" name="outro_image" id="outroFile" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"><small id="outroName">Using default Backspace outro</small></label>
 </div>
+<div style="display:flex;align-items:center;padding:8px 4px 2px"><div><label class="toggle"><input type="hidden" name="append_follow_card_present" value="1"><input type="checkbox" name="append_follow_card" id="appendFollowCard" value="on" checked> Append final Backspace outro image</label><p class="micro" style="margin:8px 0 0 25px">On by default. No extra generated outro card is added.</p></div></div>
 <label class="field" for="articleUrl">Source article URL</label><input type="text" name="article_url" id="articleUrl" placeholder="Read from script.json if already included">
 <div class="upload-grid"><div><label class="field" for="aspectRatio">Video format</label><select id="aspectRatio" name="aspect_ratio"><option value="9:16">9:16 · Shorts / Reels</option><option value="16:9">16:9 · YouTube landscape</option></select></div><div style="display:flex;align-items:flex-end;padding-bottom:3px"><label class="toggle"><input type="checkbox" name="captions" id="captions" checked> Burn in timed captions</label></div></div>
 <div class="row" style="margin-top:20px"><button class="btn" type="submit" id="renderButton">✦ Validate &amp; render video</button><span class="micro">Uses the local Python pipeline and TTS backend configured in .env.</span></div></form>
@@ -63,7 +64,8 @@ function setFileLabel(input,label){const f=input.files[0];$(label).textContent=f
 $('scriptFile').addEventListener('change',()=>setFileLabel($('scriptFile'),'scriptName'));
 $('imagesFile').addEventListener('change',()=>setFileLabel($('imagesFile'),'imagesName'));
 $('logoFile').addEventListener('change',()=>setFileLabel($('logoFile'),'logoName'));
-[['scriptDrop','scriptFile','scriptName'],['imagesDrop','imagesFile','imagesName'],['logoDrop','logoFile','logoName']].forEach(row=>{
+$('outroFile').addEventListener('change',()=>setFileLabel($('outroFile'),'outroName'));
+[['scriptDrop','scriptFile','scriptName'],['imagesDrop','imagesFile','imagesName'],['logoDrop','logoFile','logoName'],['outroDrop','outroFile','outroName']].forEach(row=>{
  const zone=$(row[0]);zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('drag')});
  zone.addEventListener('dragleave',()=>zone.classList.remove('drag'));
  zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('drag');if(e.dataTransfer.files.length){$(row[1]).files=e.dataTransfer.files;setFileLabel($(row[1]),row[2]);}});
@@ -88,7 +90,7 @@ $('renderForm').addEventListener('submit',async e=>{
  try{
   const response=await fetch('/api/external/render',{method:'POST',body:new FormData($('renderForm'))});const data=await response.json();
   if(!response.ok)throw new Error(data.error||'Upload failed');
-  const endCardNote = data.follow_end_card ? ' + Follow for more end card' : '';
+  const endCardNote = data.follow_end_card ? ' + Backspace outro image' : '';
   setStatus('renderStatus',data.message+' '+data.image_count+' images, '+data.scene_count+' scenes'+endCardNote+'. Job: '+data.job);
   await pollJob(data.job,async job=>{
    if(!job.vid)throw new Error('Render finished without a video ID.');activeVideoId=job.vid;

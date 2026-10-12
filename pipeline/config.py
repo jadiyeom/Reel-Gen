@@ -56,6 +56,7 @@ USE_LIBRARY = _flag("USE_LIBRARY", True)
 LOGO_PNG = LOGO_DIR / "logo.png"
 WATERMARK_PNG = BRAND_DIR / "watermark.png"      # logo + disclaimer, composed once
 OUTRO_CARD_PNG = BRAND_DIR / "outro_card.png"    # true-portrait end card
+DEFAULT_OUTRO_IMAGE = BRAND_DIR / "backspace_outro.webp"  # default final image
 BRAND_PLATE = OUTRO_DIR / "brand_plate.png"      # optional landscape reference (unused)
 PREBUILT_OUTRO = OUTRO_DIR / "outro.mp4"         # built once, stitched to every video
 OUTRO_VO = OUTRO_DIR / "outro_vo.mp3"            # outro call-to-action voiceover

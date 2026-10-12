@@ -210,6 +210,7 @@ def render_external(
     render_captions: bool = True,
     append_follow_card: bool = True,
     logo_path: Path | None = None,
+    outro_image_path: Path | None = None,
 ) -> Path:
     if config.GENERATION_MODE != "external":
         raise RuntimeError("render-external requires GENERATION_MODE=external")
@@ -254,12 +255,16 @@ def render_external(
                                 "voice":{"done":True}, "timeline":{"done":True}, "render":{"done":False}}
     video.save()
     state.record_video(video, script.topic, "rendering")
-    final = assemble(video, script, saved_images, audio_info, want_captions=render_captions)
+    final = assemble(
+        video, script, saved_images, audio_info, want_captions=render_captions,
+        watermark_logo_path=logo_path,
+    )
     if append_follow_card:
-        from .end_card import append_follow_card_to_video
+        from .end_card import append_outro_image_to_video
 
-        final = append_follow_card_to_video(final, logo_path=logo_path)
+        final = append_outro_image_to_video(final, outro_image_path=outro_image_path)
     video.manifest["follow_end_card"] = bool(append_follow_card)
+    video.manifest["outro_image"] = str(outro_image_path) if outro_image_path else str(config.DEFAULT_OUTRO_IMAGE)
     video.mark("complete", final=str(final))
     state.record_video(video, script.topic, "complete")
     if config.AUTO_PUBLISH_PLATFORMS:

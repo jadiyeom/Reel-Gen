@@ -2,7 +2,11 @@ from __future__ import annotations
 
 import base64
 
+import pytest
+from PIL import Image
+
 from pipeline import cards, config
+from pipeline.end_card import resolve_outro_image
 
 
 def test_uploaded_logo_overrides_configured_default(tmp_path, monkeypatch):
@@ -17,23 +21,32 @@ def test_uploaded_logo_overrides_configured_default(tmp_path, monkeypatch):
     assert cards._logo_data_uri(uploaded) == expected
 
 
-def test_outro_template_renders_follow_for_more_cta():
-    brand = config.BRAND
-    html = cards._env.get_template("outro_card.html").render(
-        w=config.WIDTH,
-        h=config.HEIGHT,
-        display_font=brand["display_font"],
-        body_font=brand["body_font"],
-        accent=brand["accent"],
-        accent_2=brand["accent_2"],
-        text=brand["text"],
-        muted=brand["muted"],
-        name="ReelGen",
-        url="https://example.com",
-        tagline="",
-        logo_data="",
-        cta="Follow for more",
-    )
+def test_committed_backspace_outro_is_present_and_readable():
+    assert config.DEFAULT_OUTRO_IMAGE.is_file()
+    with Image.open(config.DEFAULT_OUTRO_IMAGE) as image:
+        assert image.width > 0 and image.height > 0
+        image.verify()
 
-    assert '<div class="btn">Follow for more</div>' in html
-    assert '<div class="btn">https://example.com</div>' not in html
+
+def test_default_backspace_art_is_used_when_no_custom_outro(tmp_path, monkeypatch):
+    default = tmp_path / "backspace_outro.webp"
+    default.write_bytes(b"default-outro")
+    monkeypatch.setattr(config, "DEFAULT_OUTRO_IMAGE", default)
+
+    assert resolve_outro_image() == default
+
+
+def test_custom_outro_image_overrides_default(tmp_path, monkeypatch):
+    default = tmp_path / "backspace_outro.webp"
+    default.write_bytes(b"default-outro")
+    custom = tmp_path / "my-outro.png"
+    custom.write_bytes(b"custom-outro")
+    monkeypatch.setattr(config, "DEFAULT_OUTRO_IMAGE", default)
+
+    assert resolve_outro_image(custom) == custom.resolve()
+
+
+def test_missing_default_outro_fails_clearly(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "DEFAULT_OUTRO_IMAGE", tmp_path / "missing.webp")
+    with pytest.raises(FileNotFoundError, match="(?i)default|restore|outro image"):
+        resolve_outro_image()
