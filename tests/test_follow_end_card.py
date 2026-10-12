@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 
 import pytest
+from PIL import Image
 
 from pipeline import cards, config
 from pipeline.end_card import resolve_outro_image
@@ -18,6 +19,13 @@ def test_uploaded_logo_overrides_configured_default(tmp_path, monkeypatch):
 
     expected = "data:image/png;base64," + base64.b64encode(uploaded_bytes).decode()
     assert cards._logo_data_uri(uploaded) == expected
+
+
+def test_committed_backspace_outro_is_present_and_readable():
+    assert config.DEFAULT_OUTRO_IMAGE.is_file()
+    with Image.open(config.DEFAULT_OUTRO_IMAGE) as image:
+        assert image.width > 0 and image.height > 0
+        image.verify()
 
 
 def test_default_backspace_art_is_used_when_no_custom_outro(tmp_path, monkeypatch):
