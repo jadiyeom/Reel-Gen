@@ -1,7 +1,6 @@
 """Append the selected Backspace outro image to a rendered video."""
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 from . import config
