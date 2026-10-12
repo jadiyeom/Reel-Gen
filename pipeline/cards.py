@@ -35,7 +35,7 @@ def _logo_data_uri(logo_path: Path | None = None) -> str:
     return ""
 
 
-def render_watermark(out: Path = None) -> Path | None:
+def render_watermark(out: Path = None, logo_path: Path | None = None) -> Path | None:
     """Render the transparent logo+disclaimer overlay (cached at WATERMARK_PNG).
 
     Returns None (and renders nothing) when there is neither a logo nor a
@@ -43,7 +43,7 @@ def render_watermark(out: Path = None) -> Path | None:
     """
     out = out or config.WATERMARK_PNG
     b = config.BRAND
-    logo_data = _logo_data_uri()
+    logo_data = _logo_data_uri(logo_path)
     if not logo_data and not b["disclaimer"]:
         return None
 
