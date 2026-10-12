@@ -365,6 +365,11 @@ def refresh_scene(video, script: Script, scene_index: int) -> Path:
             branded = work / "body_branded.mp4"
             _overlay_watermark(body, config.WATERMARK_PNG, branded)
     visuals = work / "visuals.mp4"
+    if config.ENABLE_OUTRO:
+        # Refresh the cached outro from the Backspace image so a scene edit
+        # cannot re-introduce an old generated HTML branding card.
+        from .outro import build_outro
+        build_outro(force=True)
     if config.ENABLE_OUTRO and config.PREBUILT_OUTRO.exists():
         outro = work / "existing_outro.mp4"
         content_dur = float(timeline["duration"])
