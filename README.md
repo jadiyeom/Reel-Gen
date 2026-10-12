@@ -174,7 +174,7 @@ The **clip library** ties it together: every generated/fetched clip is embedded 
 ## 💧 Watermark & outro
 
 - **Watermark** (on by default): drop a square `assets/logo/logo.png` and it's overlaid bottom-right on every video; add `BRAND_DISCLAIMER=` for a footer line. Set `WATERMARK=false` to disable. With no logo and no disclaimer, nothing is stamped.
-- **Branded outro / end card**: the general CLI pipeline keeps its optional spoken outro off by default; set `OUTRO=true` with `BRAND_NAME`, `BRAND_URL`, `BRAND_TAGLINE`, and `logo.png` to enable it. The local upload/render dashboard separately appends a silent 3.6-second **“Follow for more”** end card by default; toggle it off per render, and upload a PNG logo or use `assets/logo/logo.png` as the fallback. The duration follows `OUTRO_SECONDS`.
+- **Branded outro / end card**: the general CLI pipeline keeps its optional spoken outro off by default; set `OUTRO=true` with `BRAND_NAME`, `BRAND_URL`, `BRAND_TAGLINE`, and `logo.png` to enable it. The local upload/render dashboard appends the Backspace robot illustration (`assets/brand/backspace_outro.webp`) as the only outro by default. Upload a custom PNG/JPG/WEBP outro image to replace it for that render, or leave the field empty to use the default. The optional PNG logo upload is separate and is used as the video watermark; it does not create another end card. The outro can be disabled per render and its duration follows `OUTRO_SECONDS`.
 
 ## ⚙️ Configuration
 
