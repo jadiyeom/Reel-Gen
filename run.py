@@ -21,6 +21,8 @@ Usage:
   python run.py topics import|add ... manage the topic backlog
   python run.py build-outro [--force] (re)build the optional branded outro clip
   python run.py build-watermark       (re)build the watermark overlay
+  python run.py doctor                run environment & dependency diagnostics
+  python run.py test                  run the automated test suite
   python run.py list                  list generated videos
   python run.py serve                 launch the review/workflow dashboard
 """
@@ -118,12 +120,18 @@ def main() -> None:
                             help="output canvas (default: 9:16)")
         parser.add_argument("--no-captions", action="store_false", dest="render_captions",
                             default=True, help="render audio and visuals without burned-in captions")
+        parser.add_argument("--thumbnail-1", help="optional path to Thumbnail 1 (PNG/JPG/WEBP)")
+        parser.add_argument("--thumbnail-2", help="optional path to Thumbnail 2 (PNG/JPG/WEBP)")
         opts = parser.parse_args(args[1:])
         from pipeline.external import render_external
         with config.video_format(opts.aspect_ratio):
-            final = render_external(opts.article_url, Path(opts.script),
-                                    Path(opts.images_dir) if opts.images_dir else None,
-                                    render_captions=opts.render_captions)
+            final = render_external(
+                opts.article_url, Path(opts.script),
+                Path(opts.images_dir) if opts.images_dir else None,
+                render_captions=opts.render_captions,
+                thumbnail_1_path=Path(opts.thumbnail_1) if opts.thumbnail_1 else None,
+                thumbnail_2_path=Path(opts.thumbnail_2) if opts.thumbnail_2 else None,
+            )
         print(f"\n[DONE] {final}")
     elif cmd == "connect-youtube":
         from pipeline.publish import connect_youtube
@@ -194,6 +202,15 @@ def main() -> None:
     elif cmd == "serve":
         from dashboard.app import run_server
         run_server()
+    elif cmd in ("doctor", "check"):
+        from pipeline.doctor import print_doctor_report
+        sys.exit(print_doctor_report())
+    elif cmd in ("test", "tests"):
+        import unittest
+        suite = unittest.defaultTestLoader.discover("tests", pattern="test_*.py")
+        runner = unittest.TextTestRunner(verbosity=2)
+        res = runner.run(suite)
+        sys.exit(0 if res.wasSuccessful() else 1)
     else:
         print(__doc__)
 

@@ -50,11 +50,22 @@ def _spawn(fn) -> str:
 def _videos() -> list[dict]:
     items = []
     if config.OUTPUT.exists():
+        from pipeline.thumbnails import get_thumbnails
         for d in sorted(config.OUTPUT.iterdir(), reverse=True):
             if (d / "script.json").exists() and (d / "final.mp4").exists():
                 data = read_json(d / "script.json")
-                items.append({"id": d.name, "topic": data.get("topic", d.name),
-                              "title": data.get("youtube_title", "")})
+                manifest = read_json(d / "manifest.json") if (d / "manifest.json").exists() else {}
+                thumbs = get_thumbnails(d)
+                prim = thumbs.get("primary", "1")
+                thumb_url = thumbs.get(prim, {}).get("url") if thumbs.get(prim, {}).get("exists") else None
+                items.append({
+                    "id": d.name,
+                    "topic": data.get("topic", d.name),
+                    "title": data.get("youtube_title", ""),
+                    "aspect_ratio": manifest.get("aspect_ratio", "9:16"),
+                    "thumbnail_url": thumb_url,
+                    "thumbnail_count": thumbs.get("count", 0),
+                })
     return items
 
 
@@ -113,10 +124,13 @@ def video(vid: str):
         abort(404)
     s = read_json(d / "script.json")
     manifest = read_json(d / "manifest.json") if (d / "manifest.json").exists() else {}
+    from pipeline.thumbnails import get_thumbnails
+    thumbs = get_thumbnails(d)
     return render_template("video.html", vid=vid, s=s, brand=config.BRAND,
                            aspect_ratio=manifest.get("aspect_ratio", "9:16"),
                            music=_music_files(), current_music=manifest.get("music", ""),
-                           current_volume=manifest.get("music_volume", 0.16))
+                           current_volume=manifest.get("music_volume", 0.16),
+                           thumbnails=thumbs)
 
 
 @app.route("/library")
@@ -140,9 +154,19 @@ def media(vid: str):
 
 
 @app.route("/media/scenes/<vid>/<int:index>.png")
+@app.route("/media/scenes/<vid>/<int:index>")
 def media_scene(vid: str, index: int):
-    f = config.OUTPUT / vid / "scenes" / f"scene_{index:02d}.png"
-    return send_file(f, mimetype="image/png", conditional=True) if f.exists() else abort(404)
+    scenes_dir = config.OUTPUT / vid / "scenes"
+    for ext, mime in (
+        (".png", "image/png"),
+        (".jpg", "image/jpeg"),
+        (".jpeg", "image/jpeg"),
+        (".webp", "image/webp"),
+    ):
+        f = scenes_dir / f"scene_{index:02d}{ext}"
+        if f.exists():
+            return send_file(f, mimetype=mime, conditional=True)
+    abort(404)
 
 
 @app.route("/download/<vid>")
@@ -180,6 +204,32 @@ def lib_img(cid: str):
         if f.exists():
             return send_file(f, conditional=True)
     abort(404)
+
+
+@app.route("/media/<vid>/thumbnail/<int:slot>")
+def media_thumbnail(vid: str, slot: int):
+    video_dir = config.OUTPUT / vid
+    if not video_dir.is_dir():
+        abort(404)
+    from pipeline.thumbnails import MIME_BY_EXT, find_thumbnail_path
+    path = find_thumbnail_path(video_dir, slot)
+    if not path or not path.is_file():
+        abort(404)
+    mime = MIME_BY_EXT.get(path.suffix.lower(), "image/png")
+    return send_file(path, mimetype=mime, conditional=True)
+
+
+@app.route("/download/<vid>/thumbnail/<int:slot>")
+def download_thumbnail(vid: str, slot: int):
+    video_dir = config.OUTPUT / vid
+    if not video_dir.is_dir():
+        abort(404)
+    from pipeline.thumbnails import find_thumbnail_path
+    path = find_thumbnail_path(video_dir, slot)
+    if not path or not path.is_file():
+        abort(404)
+    return send_file(path, as_attachment=True, download_name=f"{vid}-thumbnail-{slot}{path.suffix.lower()}")
+
 
 
 # ---------- workflow API ----------
@@ -435,6 +485,70 @@ def api_upload_music():
     dest = config.MUSIC_DIR / Path(f.filename).name
     f.save(dest)
     return jsonify({"ok": True, "name": dest.name})
+
+
+# ---------- thumbnails API ----------
+@app.get("/api/video/<vid>/thumbnails")
+def api_video_thumbnails(vid: str):
+    video_dir = config.OUTPUT / vid
+    if not video_dir.is_dir() or not (video_dir / "script.json").is_file():
+        return jsonify({"error": "Video not found"}), 404
+    from pipeline.thumbnails import get_thumbnails
+    return jsonify(get_thumbnails(video_dir))
+
+
+@app.post("/api/video/<vid>/thumbnail/<int:slot>")
+def api_video_thumbnail_upload(vid: str, slot: int):
+    video_dir = config.OUTPUT / vid
+    if not video_dir.is_dir() or not (video_dir / "script.json").is_file():
+        return jsonify({"error": "Video not found"}), 404
+    if slot not in (1, 2):
+        return jsonify({"error": "Thumbnail slot must be 1 or 2."}), 400
+    f = request.files.get("file") or request.files.get("thumbnail")
+    if not f or not f.filename:
+        return jsonify({"error": "Select an image file to upload."}), 400
+    from pipeline.thumbnails import save_thumbnail
+    try:
+        content = f.read()
+        thumbs = save_thumbnail(video_dir, slot, content, f.filename)
+        return jsonify({"ok": True, "thumbnails": thumbs, "slot": slot, "thumbnail": thumbs.get(str(slot))})
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except Exception as exc:
+        return jsonify({"error": f"Failed to save thumbnail: {exc}"}), 500
+
+
+@app.delete("/api/video/<vid>/thumbnail/<int:slot>")
+@app.post("/api/video/<vid>/thumbnail/<int:slot>/delete")
+def api_video_thumbnail_delete(vid: str, slot: int):
+    video_dir = config.OUTPUT / vid
+    if not video_dir.is_dir() or not (video_dir / "script.json").is_file():
+        return jsonify({"error": "Video not found"}), 404
+    from pipeline.thumbnails import delete_thumbnail
+    try:
+        thumbs = delete_thumbnail(video_dir, slot)
+        return jsonify({"ok": True, "thumbnails": thumbs, "slot": slot})
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+
+
+@app.post("/api/video/<vid>/thumbnail/primary")
+def api_video_thumbnail_primary(vid: str):
+    video_dir = config.OUTPUT / vid
+    if not video_dir.is_dir() or not (video_dir / "script.json").is_file():
+        return jsonify({"error": "Video not found"}), 404
+    payload = request.get_json(silent=True) or {}
+    try:
+        slot = int(payload.get("slot") or 1)
+    except (ValueError, TypeError):
+        return jsonify({"error": "Invalid slot value."}), 400
+    from pipeline.thumbnails import set_primary_thumbnail
+    try:
+        thumbs = set_primary_thumbnail(video_dir, slot)
+        return jsonify({"ok": True, "thumbnails": thumbs, "primary": str(slot)})
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 400
+
 
 
 def run_server(host: str = "127.0.0.1", port: int = 5000) -> None:

@@ -492,6 +492,21 @@ def publish_youtube(video: Path, social: dict, privacy_status: str = "private") 
     video_id = response.get("id")
     if not video_id:
         raise RuntimeError("YouTube upload completed without returning a video ID")
+
+    try:
+        from .thumbnails import get_primary_thumbnail_path
+        thumb_path = get_primary_thumbnail_path(video.parent)
+        if thumb_path and thumb_path.is_file():
+            ext = thumb_path.suffix.lower()
+            mime = "image/png" if ext == ".png" else "image/jpeg"
+            youtube.thumbnails().set(
+                videoId=video_id,
+                media_body=MediaFileUpload(str(thumb_path), mimetype=mime)
+            ).execute()
+            log(f"uploaded custom thumbnail to YouTube ({thumb_path.name})")
+    except Exception as exc:
+        log(f"custom thumbnail upload to YouTube skipped ({exc})")
+
     result = {"id": video_id, "url": f"https://youtu.be/{video_id}", "privacy_status": privacy_status,
               "title": metadata["title"]}
     _record(video, "youtube", result)
@@ -617,9 +632,10 @@ def _instagram_request(method: str, url: str, **kwargs) -> dict:
     return payload
 
 
-def _instagram_video_url(video: Path, explicit_url: str = "") -> tuple[str, Callable[[], None] | None]:
+def _instagram_video_url(video: Path, explicit_url: str = "") -> tuple[str, str | None, Callable[[], None] | None]:
     if explicit_url:
         url = explicit_url
+        cover_url = None
     else:
         template = config.INSTAGRAM_VIDEO_URL_TEMPLATE
         if not template:
@@ -632,17 +648,18 @@ def _instagram_video_url(video: Path, explicit_url: str = "") -> tuple[str, Call
                 return _tunnel_instagram_video(video)
             raise RuntimeError("Set INSTAGRAM_UPLOAD_MODE to 'tunnel' or 'r2', or configure a direct video URL.")
         url = template.format(filename=quote(video.name), video_id=quote(video.stem))
+        cover_url = None
     host = (urlparse(url).hostname or "").lower()
     if host == "facebook.com" or host.endswith(".facebook.com"):
         raise ValueError(
             "A Facebook Page/Reel link is a webpage, not the MP4 file. Supply a "
             "publicly reachable direct MP4 URL for Instagram Login publishing."
         )
-    return url, None
+    return url, cover_url, None
 
 
-def _upload_instagram_video(video: Path) -> tuple[str, Callable[[], None]]:
-    """Stage a local MP4 in configured public S3-compatible storage for Meta to fetch."""
+def _upload_instagram_video(video: Path) -> tuple[str, str | None, Callable[[], None]]:
+    """Stage a local MP4 and optional primary cover in configured public S3-compatible storage."""
     required = {
         "INSTAGRAM_STORAGE_ENDPOINT_URL": config.INSTAGRAM_STORAGE_ENDPOINT_URL,
         "INSTAGRAM_STORAGE_ACCESS_KEY_ID": config.INSTAGRAM_STORAGE_ACCESS_KEY_ID,
@@ -679,14 +696,49 @@ def _upload_instagram_video(video: Path) -> tuple[str, Callable[[], None]]:
         ExtraArgs={"ContentType": mimetypes.guess_type(video.name)[0] or "video/mp4"},
     )
 
+    from .thumbnails import get_primary_thumbnail_path
+    thumb_path = get_primary_thumbnail_path(video.parent)
+    thumb_key = None
+    cover_url = None
+    if thumb_path and thumb_path.is_file():
+        try:
+            from PIL import Image as PILImage
+            import io
+            ext = thumb_path.suffix.lower()
+            mime = "image/png" if ext == ".png" else "image/jpeg"
+            upload_bytes = thumb_path.read_bytes()
+            if ext not in (".png", ".jpg", ".jpeg"):
+                with PILImage.open(thumb_path) as img:
+                    rgb = img.convert("RGB")
+                    buf = io.BytesIO()
+                    rgb.save(buf, format="JPEG", quality=95)
+                    upload_bytes = buf.getvalue()
+                    mime = "image/jpeg"
+                    ext = ".jpg"
+            thumb_key = "/".join(part for part in (config.INSTAGRAM_STORAGE_PREFIX, f"{digest.hexdigest()}-cover{ext}") if part)
+            client.put_object(
+                Bucket=config.INSTAGRAM_STORAGE_BUCKET,
+                Key=thumb_key,
+                Body=upload_bytes,
+                ContentType=mime,
+            )
+            cover_url = f"{config.INSTAGRAM_STORAGE_PUBLIC_BASE_URL}/{quote(thumb_key, safe='/')}"
+        except Exception as exc:
+            log(f"S3 thumbnail staging skipped: {exc}")
+
     def delete_staged_video() -> None:
         client.delete_object(Bucket=config.INSTAGRAM_STORAGE_BUCKET, Key=key)
+        if thumb_key:
+            try:
+                client.delete_object(Bucket=config.INSTAGRAM_STORAGE_BUCKET, Key=thumb_key)
+            except Exception:
+                pass
 
-    return f"{config.INSTAGRAM_STORAGE_PUBLIC_BASE_URL}/{quote(key, safe='/')}", delete_staged_video
+    return f"{config.INSTAGRAM_STORAGE_PUBLIC_BASE_URL}/{quote(key, safe='/')}", cover_url, delete_staged_video
 
 
-def _upload_instagram_drive(video: Path) -> tuple[str, Callable[[], None]]:
-    """Upload the Reel to Drive, expose a temporary viewer link, and return cleanup."""
+def _upload_instagram_drive(video: Path) -> tuple[str, str | None, Callable[[], None]]:
+    """Upload the Reel (and optional cover) to Drive, expose temporary viewer links, and return cleanup."""
     try:
         from googleapiclient.discovery import build
         from googleapiclient.http import MediaFileUpload
@@ -701,6 +753,9 @@ def _upload_instagram_drive(video: Path) -> tuple[str, Callable[[], None]]:
     file_id = uploaded.get("id")
     if not file_id:
         raise RuntimeError("Google Drive upload completed without returning a file ID")
+
+    thumb_id = None
+    cover_url = None
     try:
         drive.permissions().create(
             fileId=file_id,
@@ -717,18 +772,62 @@ def _upload_instagram_drive(video: Path) -> tuple[str, Callable[[], None]]:
         if resource_key:
             separator = "&" if "?" in video_url else "?"
             video_url = f"{video_url}{separator}resourcekey={quote(resource_key)}"
+
+        from .thumbnails import get_primary_thumbnail_path
+        thumb_path = get_primary_thumbnail_path(video.parent)
+        if thumb_path and thumb_path.is_file():
+            try:
+                from PIL import Image as PILImage
+                import io
+                ext = thumb_path.suffix.lower()
+                mime = "image/png" if ext == ".png" else "image/jpeg"
+                thumb_bytes = thumb_path.read_bytes()
+                if ext not in (".png", ".jpg", ".jpeg"):
+                    with PILImage.open(thumb_path) as img:
+                        rgb = img.convert("RGB")
+                        buf = io.BytesIO()
+                        rgb.save(buf, format="JPEG", quality=95)
+                        thumb_bytes = buf.getvalue()
+                        mime = "image/jpeg"
+                from googleapiclient.http import MediaIoBaseUpload
+                thumb_upload = drive.files().create(
+                    body={"name": f"{video.stem}-cover.jpg", "mimeType": mime},
+                    media_body=MediaIoBaseUpload(io.BytesIO(thumb_bytes), mimetype=mime),
+                    fields="id",
+                ).execute()
+                thumb_id = thumb_upload.get("id")
+                if thumb_id:
+                    drive.permissions().create(
+                        fileId=thumb_id,
+                        body={"type": "anyone", "role": "reader"},
+                        fields="id",
+                    ).execute()
+                    thumb_meta = drive.files().get(fileId=thumb_id, fields="webContentLink").execute()
+                    cover_url = thumb_meta.get("webContentLink")
+            except Exception as exc:
+                log(f"Drive thumbnail staging skipped: {exc}")
     except Exception:
         drive.files().delete(fileId=file_id).execute()
+        if thumb_id:
+            try:
+                drive.files().delete(fileId=thumb_id).execute()
+            except Exception:
+                pass
         raise
 
     def delete_staged_video() -> None:
         drive.files().delete(fileId=file_id).execute()
+        if thumb_id:
+            try:
+                drive.files().delete(fileId=thumb_id).execute()
+            except Exception:
+                pass
 
-    return video_url, delete_staged_video
+    return video_url, cover_url, delete_staged_video
 
 
-def _tunnel_instagram_video(video: Path) -> tuple[str, Callable[[], None]]:
-    """Serve only this video over an ephemeral Cloudflare Quick Tunnel."""
+def _tunnel_instagram_video(video: Path) -> tuple[str, str | None, Callable[[], None]]:
+    """Serve only this video and optional primary cover over an ephemeral Cloudflare Quick Tunnel."""
     cloudflared = shutil.which("cloudflared")
     if not cloudflared:
         raise RuntimeError(
@@ -738,12 +837,48 @@ def _tunnel_instagram_video(video: Path) -> tuple[str, Callable[[], None]]:
 
     route = "/" + secrets.token_urlsafe(24) + (video.suffix.lower() or ".mp4")
 
+    # Check for primary thumbnail
+    from .thumbnails import get_primary_thumbnail_path
+    thumb_path = get_primary_thumbnail_path(video.parent)
+    thumb_bytes = None
+    thumb_mime = "image/jpeg"
+    thumb_route = None
+    if thumb_path and thumb_path.is_file():
+        try:
+            from PIL import Image as PILImage
+            import io
+            ext = thumb_path.suffix.lower()
+            thumb_mime = "image/png" if ext == ".png" else "image/jpeg"
+            thumb_bytes = thumb_path.read_bytes()
+            if ext not in (".png", ".jpg", ".jpeg"):
+                with PILImage.open(thumb_path) as img:
+                    rgb = img.convert("RGB")
+                    buf = io.BytesIO()
+                    rgb.save(buf, format="JPEG", quality=95)
+                    thumb_bytes = buf.getvalue()
+                    thumb_mime = "image/jpeg"
+                    ext = ".jpg"
+            thumb_route = "/" + secrets.token_urlsafe(24) + ext
+        except Exception as exc:
+            log(f"Tunnel thumbnail preparation skipped: {exc}")
+            thumb_bytes = None
+            thumb_route = None
+
     class VideoHandler(BaseHTTPRequestHandler):
         def log_message(self, *_args) -> None:
             pass
 
         def _send_video(self, include_body: bool) -> None:
-            if self.path.split("?", 1)[0] != route:
+            clean_path = self.path.split("?", 1)[0]
+            if thumb_route and clean_path == thumb_route and thumb_bytes:
+                self.send_response(200)
+                self.send_header("Content-Type", thumb_mime)
+                self.send_header("Content-Length", str(len(thumb_bytes)))
+                self.end_headers()
+                if include_body:
+                    self.wfile.write(thumb_bytes)
+                return
+            if clean_path != route:
                 self.send_error(404)
                 return
             size = video.stat().st_size
@@ -869,7 +1004,8 @@ def _tunnel_instagram_video(video: Path) -> tuple[str, Callable[[], None]]:
         stop_tunnel()
         raise RuntimeError(f"Cloudflare Quick Tunnel did not become reachable for the MP4: {last_error}")
 
-    return public_url + route, stop_tunnel
+    cover_url = (public_url + thumb_route) if thumb_route else None
+    return public_url + route, cover_url, stop_tunnel
 
 
 def publish_instagram(video: Path, social: dict, explicit_video_url: str = "") -> dict:
@@ -878,16 +1014,29 @@ def publish_instagram(video: Path, social: dict, explicit_video_url: str = "") -
         raise RuntimeError("Set INSTAGRAM_BUSINESS_ACCOUNT_ID in .env to your Instagram account ID.")
     token = _instagram_access_token()
 
-    video_url, delete_staged_video = _instagram_video_url(video, explicit_video_url)
+    video_url, cover_url, delete_staged_video = _instagram_video_url(video, explicit_video_url)
     try:
         base = f"https://graph.instagram.com/{config.INSTAGRAM_GRAPH_VERSION}"
-        created = _instagram_request("POST", f"{base}/{ig_user_id}/media", data={
+        media_data = {
             "media_type": "REELS",
             "video_url": video_url,
             "caption": social["instagram"]["caption"],
             "share_to_feed": "true",
             "access_token": token,
-        })
+        }
+        if cover_url:
+            media_data["cover_url"] = cover_url
+            log(f"Attaching primary custom thumbnail cover to Instagram Reel ({cover_url})")
+
+        try:
+            created = _instagram_request("POST", f"{base}/{ig_user_id}/media", data=media_data)
+        except Exception as exc:
+            if cover_url:
+                log(f"Instagram reel container creation with cover_url failed ({exc}); retrying without cover...")
+                media_data.pop("cover_url", None)
+                created = _instagram_request("POST", f"{base}/{ig_user_id}/media", data=media_data)
+            else:
+                raise
         container_id = created.get("id") or created.get("container_id")
         if not container_id:
             raise RuntimeError("Instagram did not return a Reel container ID")

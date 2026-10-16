@@ -77,6 +77,8 @@ def _extract_images(zip_path: Path, image_dir: Path) -> int:
                 raise ValueError("The ZIP contains a symbolic link, which is not allowed.")
 
             base_name = member.name
+            if member_name.startswith("__MACOSX/") or "/__MACOSX/" in member_name or base_name.startswith("._"):
+                continue
             if Path(base_name).suffix.lower() not in _IMAGE_SUFFIXES:
                 continue
             if base_name in seen_names:
@@ -186,6 +188,8 @@ def external_render():
     zip_upload = request.files.get("images_zip")
     logo_upload = request.files.get("logo")
     outro_upload = request.files.get("outro_image")
+    thumbnail_1_upload = request.files.get("thumbnail_1")
+    thumbnail_2_upload = request.files.get("thumbnail_2")
     if not script_upload or not script_upload.filename:
         return jsonify({"error": "Choose a script.json file."}), 400
     if Path(script_upload.filename).suffix.lower() != ".json":
@@ -198,6 +202,10 @@ def external_render():
         return jsonify({"error": "The logo must be a PNG file (transparent backgrounds are supported)."}), 400
     if outro_upload and outro_upload.filename and Path(outro_upload.filename).suffix.lower() not in _IMAGE_SUFFIXES:
         return jsonify({"error": "The custom outro must be a PNG, JPG, JPEG, or WEBP image."}), 400
+    if thumbnail_1_upload and thumbnail_1_upload.filename and Path(thumbnail_1_upload.filename).suffix.lower() not in _IMAGE_SUFFIXES:
+        return jsonify({"error": "Thumbnail 1 must be a PNG, JPG, JPEG, or WEBP image."}), 400
+    if thumbnail_2_upload and thumbnail_2_upload.filename and Path(thumbnail_2_upload.filename).suffix.lower() not in _IMAGE_SUFFIXES:
+        return jsonify({"error": "Thumbnail 2 must be a PNG, JPG, JPEG, or WEBP image."}), 400
     # The marker distinguishes an intentionally unchecked UI toggle from older API
     # callers that don't send the new field; those callers keep the default-on behavior.
     if "append_follow_card_present" in request.form:
@@ -265,6 +273,30 @@ def external_render():
                     outro_image.verify()
             except Exception as exc:  # noqa: BLE001
                 raise ValueError("The custom outro is not a valid image.") from exc
+        thumbnail_1_path = None
+        if thumbnail_1_upload and thumbnail_1_upload.filename:
+            t1_suffix = Path(thumbnail_1_upload.filename).suffix.lower()
+            thumbnail_1_path = workspace / f"thumbnail_1{t1_suffix}"
+            thumbnail_1_upload.save(thumbnail_1_path)
+            if thumbnail_1_path.stat().st_size > 15 * 1024 * 1024:
+                raise ValueError("Thumbnail 1 must be smaller than 15 MB.")
+            try:
+                with Image.open(thumbnail_1_path) as t1_image:
+                    t1_image.verify()
+            except Exception as exc:  # noqa: BLE001
+                raise ValueError("Thumbnail 1 is not a valid image.") from exc
+        thumbnail_2_path = None
+        if thumbnail_2_upload and thumbnail_2_upload.filename:
+            t2_suffix = Path(thumbnail_2_upload.filename).suffix.lower()
+            thumbnail_2_path = workspace / f"thumbnail_2{t2_suffix}"
+            thumbnail_2_upload.save(thumbnail_2_path)
+            if thumbnail_2_path.stat().st_size > 15 * 1024 * 1024:
+                raise ValueError("Thumbnail 2 must be smaller than 15 MB.")
+            try:
+                with Image.open(thumbnail_2_path) as t2_image:
+                    t2_image.verify()
+            except Exception as exc:  # noqa: BLE001
+                raise ValueError("Thumbnail 2 is not a valid image.") from exc
         zip_path = workspace / "images-upload.zip"
         zip_upload.save(zip_path)
         image_dir = workspace / "images"
@@ -298,6 +330,8 @@ def external_render():
                 append_follow_card=append_follow_card,
                 logo_path=logo_path,
                 outro_image_path=outro_image_path,
+                thumbnail_1_path=thumbnail_1_path,
+                thumbnail_2_path=thumbnail_2_path,
             )
         vid = Path(final).parent.name
         set_stage("done", vid=vid, final=f"/media/{vid}/final.mp4",
@@ -308,6 +342,7 @@ def external_render():
         "job": job_id, "title": parsed_title or parsed_script.topic,
         "scene_count": len(parsed_script.scenes), "image_count": len(resolved_images),
         "follow_end_card": append_follow_card,
+        "thumbnail_count": (1 if thumbnail_1_path else 0) + (1 if thumbnail_2_path else 0),
         "message": "Assets validated. Rendering has started.",
     })
 
@@ -317,6 +352,8 @@ def external_video_info(vid: str):
     video_dir = _safe_video_dir(vid)
     script = read_json(video_dir / "script.json")
     article = read_json(video_dir / "article.json") if (video_dir / "article.json").exists() else {}
+    from pipeline.thumbnails import get_thumbnails
+    thumbs = get_thumbnails(video_dir)
     return jsonify({
         "vid": vid, "title": script.get("youtube_title") or script.get("topic") or vid,
         "youtube_title": script.get("youtube_title", ""),
@@ -326,6 +363,7 @@ def external_video_info(vid: str):
         "x_caption": script.get("x_caption", ""),
         "hashtags": script.get("hashtags", []), "source_url": article.get("url") or "",
         "video_url": f"/media/{vid}/final.mp4", "review_url": f"/v/{vid}",
+        "thumbnails": thumbs,
     })
 
 

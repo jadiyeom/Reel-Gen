@@ -24,6 +24,19 @@
   @keyframes s{to{transform:rotate(360deg)}}
   .hidden{display:none}
   .del{background:transparent;border:1px solid rgba(239,68,68,.5);color:#EF4444}
+  .thumb-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+  .thumb-card{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px}
+  .thumb-card.is-primary{border-color:rgba(245,166,35,.45);background:rgba(245,166,35,.03)}
+  .thumb-header{display:flex;justify-content:space-between;align-items:center}
+  .thumb-title{font-size:12px;font-weight:700;color:var(--text)}
+  .thumb-badge{font-size:10px;text-transform:uppercase;letter-spacing:1px;padding:2px 6px;border-radius:4px;font-weight:700}
+  .primary-badge{background:rgba(245,166,35,.15);color:var(--accent);border:1px solid rgba(245,166,35,.3)}
+  .thumb-preview{position:relative;width:100%;border-radius:8px;overflow:hidden;background:#0c1118;border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center}
+  .thumb-preview img{width:100%;height:100%;object-fit:cover;display:block}
+  .thumb-empty{text-align:center;color:var(--muted);font-size:11px;display:flex;flex-direction:column;gap:4px;padding:16px 8px}
+  .thumb-meta{font-size:11px;color:var(--muted);display:flex;justify-content:space-between}
+  .thumb-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .btn-sm{padding:5px 9px!important;font-size:11px!important;border-radius:6px!important;cursor:pointer}
 </style>
 
 <a class="back" href="/">← all videos</a>
@@ -33,6 +46,96 @@
     <div class="actions">
       <a class="btn" href="/download/{{ vid }}">↓ Download</a>
       <button class="btn del" onclick="delVideo()">Delete</button>
+    </div>
+
+    <div class="block" style="margin-top:18px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <h3 style="margin-bottom:0">Thumbnails (2 Options)</h3>
+        <span style="font-size:11px;color:var(--muted)">A/B social covers</span>
+      </div>
+      <div class="thumb-grid">
+        <!-- Thumbnail 1 -->
+        <div class="thumb-card {% if thumbnails and thumbnails['1'].is_primary %}is-primary{% endif %}">
+          <div class="thumb-header">
+            <span class="thumb-title">Thumbnail 1</span>
+            {% if thumbnails and thumbnails['1'].is_primary %}
+              <span class="thumb-badge primary-badge">Primary</span>
+            {% endif %}
+          </div>
+          <div class="thumb-preview" style="aspect-ratio:{{ '16/9' if aspect_ratio == '16:9' else '9/16' }}">
+            {% if thumbnails and thumbnails['1'].exists %}
+              <img src="{{ thumbnails['1'].url }}" alt="Thumbnail 1">
+            {% else %}
+              <div class="thumb-empty">
+                <span>Option A</span>
+                <small>No thumbnail</small>
+              </div>
+            {% endif %}
+          </div>
+          <div class="thumb-meta">
+            {% if thumbnails and thumbnails['1'].exists %}
+              <span>{{ thumbnails['1'].width }}×{{ thumbnails['1'].height }}</span>
+              <span>{{ '%.0f' % (thumbnails['1'].size_bytes / 1024) }} KB</span>
+            {% else %}
+              <span>PNG / JPG / WEBP</span>
+            {% endif %}
+          </div>
+          <div class="thumb-actions">
+            <label class="btn ghost btn-sm">
+              {{ 'Replace' if thumbnails and thumbnails['1'].exists else '+ Upload' }}
+              <input type="file" accept=".png,.jpg,.jpeg,.webp,image/*" onchange="uploadThumbnail(1, this)" style="display:none">
+            </label>
+            {% if thumbnails and thumbnails['1'].exists %}
+              <a class="btn ghost btn-sm" href="{{ thumbnails['1'].download_url }}" download title="Download Thumbnail 1">↓</a>
+              {% if not thumbnails['1'].is_primary %}
+                <button class="btn ghost btn-sm" onclick="setPrimaryThumb(1)" title="Set as primary thumbnail">★ Primary</button>
+              {% endif %}
+              <button class="btn del btn-sm" onclick="deleteThumb(1)" title="Delete thumbnail">✕</button>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Thumbnail 2 -->
+        <div class="thumb-card {% if thumbnails and thumbnails['2'].is_primary %}is-primary{% endif %}">
+          <div class="thumb-header">
+            <span class="thumb-title">Thumbnail 2</span>
+            {% if thumbnails and thumbnails['2'].is_primary %}
+              <span class="thumb-badge primary-badge">Primary</span>
+            {% endif %}
+          </div>
+          <div class="thumb-preview" style="aspect-ratio:{{ '16/9' if aspect_ratio == '16:9' else '9/16' }}">
+            {% if thumbnails and thumbnails['2'].exists %}
+              <img src="{{ thumbnails['2'].url }}" alt="Thumbnail 2">
+            {% else %}
+              <div class="thumb-empty">
+                <span>Option B</span>
+                <small>No thumbnail</small>
+              </div>
+            {% endif %}
+          </div>
+          <div class="thumb-meta">
+            {% if thumbnails and thumbnails['2'].exists %}
+              <span>{{ thumbnails['2'].width }}×{{ thumbnails['2'].height }}</span>
+              <span>{{ '%.0f' % (thumbnails['2'].size_bytes / 1024) }} KB</span>
+            {% else %}
+              <span>PNG / JPG / WEBP</span>
+            {% endif %}
+          </div>
+          <div class="thumb-actions">
+            <label class="btn ghost btn-sm">
+              {{ 'Replace' if thumbnails and thumbnails['2'].exists else '+ Upload' }}
+              <input type="file" accept=".png,.jpg,.jpeg,.webp,image/*" onchange="uploadThumbnail(2, this)" style="display:none">
+            </label>
+            {% if thumbnails and thumbnails['2'].exists %}
+              <a class="btn ghost btn-sm" href="{{ thumbnails['2'].download_url }}" download title="Download Thumbnail 2">↓</a>
+              {% if not thumbnails['2'].is_primary %}
+                <button class="btn ghost btn-sm" onclick="setPrimaryThumb(2)" title="Set as primary thumbnail">★ Primary</button>
+              {% endif %}
+              <button class="btn del btn-sm" onclick="deleteThumb(2)" title="Delete thumbnail">✕</button>
+            {% endif %}
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="block" style="margin-top:18px">
@@ -75,9 +178,30 @@
       <div class="tags">{% for h in s.hashtags %}<span class="tag">#{{ h }}</span>{% endfor %}</div>
     </div>
 
-    <div class="block"><h3>Script</h3>
+    <div class="block"><h3>Script &amp; Scenes</h3>
       {% for sc in s.scenes %}
-      <div class="scene"><span class="n">{{ sc.index }}</span><span>{{ sc.narration }}</span>{% if sc.scene_type != 'blank' %}<button class="btn ghost" onclick="regenerateScene({{ sc.index }})">Regenerate illustration</button>{% endif %}</div>
+      <div class="scene">
+        {% if sc.scene_type != 'blank' %}
+        <img src="/media/scenes/{{ vid }}/{{ sc.index }}.png"
+             onerror="this.style.display='none'"
+             alt="Scene {{ sc.index }}"
+             style="width:58px;height:{{ '34px' if aspect_ratio == '16:9' else '98px' }};object-fit:cover;border-radius:8px;background:#0c1118;flex:none;border:1px solid rgba(255,255,255,.1)">
+        {% else %}
+        <div style="width:58px;height:{{ '34px' if aspect_ratio == '16:9' else '98px' }};display:grid;place-items:center;background:#18181b;border-radius:8px;flex:none;border:1px dashed rgba(255,255,255,.1);color:var(--muted);font-size:10px">pause</div>
+        {% endif %}
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+            <span class="n">{{ sc.index }}</span>
+            <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">{{ sc.scene_type }}</span>
+            {% if sc.hero %}<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(201,243,107,.15);color:#c9f36b;font-weight:700">HERO</span>{% endif %}
+          </div>
+          <div style="margin-bottom:6px;font-size:14px;line-height:1.4">{{ sc.narration if sc.narration else '(silent pause)' }}</div>
+          {% if sc.scene_type != 'blank' %}
+            <div style="font-size:12px;color:var(--muted);margin-bottom:8px;font-style:italic">{{ sc.image_prompt }}</div>
+            <button class="btn ghost" style="padding:6px 12px;font-size:12px" onclick="regenerateScene({{ sc.index }})">Regenerate illustration</button>
+          {% endif %}
+        </div>
+      </div>
       {% endfor %}
     </div>
   </div>
@@ -148,6 +272,48 @@ async function delVideo(){
   const r = await fetch('/api/video/delete',{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({vid:VID})});
   if(r.ok) location.href='/'; else alert('Delete failed');
+}
+
+async function uploadThumbnail(slot, input){
+  const file = input.files[0];
+  if(!file) return;
+  const fd = new FormData();
+  fd.append('file', file);
+  try{
+    const r = await fetch(`/api/video/${VID}/thumbnail/${slot}`, {method: 'POST', body: fd});
+    const data = await r.json();
+    if(!r.ok) throw new Error(data.error || 'Upload failed');
+    location.reload();
+  }catch(err){
+    alert(err.message || 'Thumbnail upload failed');
+  }
+}
+
+async function setPrimaryThumb(slot){
+  try{
+    const r = await fetch(`/api/video/${VID}/thumbnail/primary`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({slot})
+    });
+    const data = await r.json();
+    if(!r.ok) throw new Error(data.error || 'Failed to set primary thumbnail');
+    location.reload();
+  }catch(err){
+    alert(err.message);
+  }
+}
+
+async function deleteThumb(slot){
+  if(!confirm(`Delete Thumbnail ${slot}?`)) return;
+  try{
+    const r = await fetch(`/api/video/${VID}/thumbnail/${slot}`, {method: 'DELETE'});
+    const data = await r.json();
+    if(!r.ok) throw new Error(data.error || 'Delete failed');
+    location.reload();
+  }catch(err){
+    alert(err.message);
+  }
 }
 </script>
 {% endblock %}

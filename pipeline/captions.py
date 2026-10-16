@@ -1,10 +1,68 @@
 """Word-timed editorial captions via faster-whisper and ASS subtitles."""
 from __future__ import annotations
 
+import os
+import sys
 from pathlib import Path
 
 from . import config
 from .util import log, step
+
+_CUDA_DLLS_INITIALIZED = False
+
+
+def _ensure_cuda_dlls() -> None:
+    """Register CUDA/cuDNN DLL paths on Windows so CTranslate2 can load CUDA 12."""
+    global _CUDA_DLLS_INITIALIZED
+    if _CUDA_DLLS_INITIALIZED or sys.platform != "win32":
+        return
+    _CUDA_DLLS_INITIALIZED = True
+    candidates: list[Path] = []
+
+    # 1. Current virtualenv site-packages
+    try:
+        import site
+        for sp in site.getsitepackages():
+            sp_path = Path(sp)
+            candidates.extend([
+                sp_path / "torch" / "lib",
+                sp_path / "nvidia" / "cublas" / "bin",
+                sp_path / "nvidia" / "cudnn" / "bin",
+            ])
+    except Exception:
+        pass
+
+    # 2. Configured CHATTERBOX_PYTHON venv if present
+    cb_env = os.getenv("CHATTERBOX_PYTHON")
+    if cb_env:
+        try:
+            cb_sp = Path(cb_env).resolve().parent.parent / "Lib" / "site-packages"
+            candidates.extend([
+                cb_sp / "torch" / "lib",
+                cb_sp / "nvidia" / "cublas" / "bin",
+                cb_sp / "nvidia" / "cudnn" / "bin",
+            ])
+        except Exception:
+            pass
+
+    # 3. Standard CUDA Toolkit installations
+    cuda_path = os.getenv("CUDA_PATH")
+    if cuda_path:
+        candidates.append(Path(cuda_path) / "bin")
+    cuda_root = Path(r"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA")
+    if cuda_root.is_dir():
+        for ver_dir in cuda_root.iterdir():
+            candidates.extend([ver_dir / "bin", ver_dir / "libnvvp"])
+
+    for c in candidates:
+        if c.is_dir() and any(c.glob("cublas64_*.dll")):
+            try:
+                os.add_dll_directory(str(c))
+                path_str = str(c)
+                if path_str not in os.environ.get("PATH", ""):
+                    os.environ["PATH"] = path_str + os.pathsep + os.environ.get("PATH", "")
+            except Exception:
+                pass
 
 
 def _cc(t: float) -> str:
@@ -74,6 +132,36 @@ def _group(words: list[dict]) -> list[list[dict]]:
     return lines
 
 
+_WHISPER_MODELS: dict[tuple[str, str, str], object] = {}
+_CUDA_WHISPER_AVAILABLE: bool | None = None
+
+
+def _get_whisper_model(model_name: str, device: str, compute: str):
+    key = (model_name, device, compute)
+    if key not in _WHISPER_MODELS:
+        if device == "cuda":
+            _ensure_cuda_dlls()
+        from faster_whisper import WhisperModel
+        _WHISPER_MODELS[key] = WhisperModel(model_name, device=device, compute_type=compute)
+    return _WHISPER_MODELS[key]
+
+
+
+def _format_caption_text(line: list[dict], is_face: bool = False) -> str:
+    """Join words, applying emphasis color override on the face layer if configured."""
+    words = []
+    em_set = config.CAPTION_EMPHASIS_WORDS
+    em_color = _hex_to_ass(config.CAPTION_TERRACOTTA) if em_set else ""
+    base_color = _hex_to_ass(config.CAPTION_COLOR) if em_set else ""
+    for w in line:
+        raw = w["word"].strip().replace("{", "\\{").replace("}", "\\}")
+        if is_face and em_set and _norm(raw) in em_set:
+            words.append(f"{{\\c{em_color}}}{raw}{{\\c{base_color}}}")
+        else:
+            words.append(raw)
+    return " ".join(words)
+
+
 def _dialogue(line: list[dict], position: str | None = None) -> str:
     start = _cc(line[0]["start"])
     end = _cc(line[-1]["end"])
@@ -85,22 +173,21 @@ def _dialogue(line: list[dict], position: str | None = None) -> str:
     fallback_y = config.HEIGHT - 430 if config.ASPECT_RATIO == "9:16" else round(config.HEIGHT * 0.80)
     y = default_y.get(position, fallback_y)
     alignment = {"top": 8, "middle": 5, "bottom": 2}.get(position, 2)
-    text = " ".join(w["word"].strip().replace("{", "\\{").replace("}", "\\}") for w in line)
+    shadow_text = _format_caption_text(line, is_face=False)
+    face_text = _format_caption_text(line, is_face=True)
     x = config.WIDTH // 2
     shadow_y = y + round(config.CAPTION_SHADOW_OFFSET)
     shadow = (f"Dialogue: 0,{start},{end},EditorialShadow,,0,0,0,,"
-              f"{{\\an{alignment}\\pos({x},{shadow_y})\\blur{config.CAPTION_SHADOW_BLUR:g}}}{text}")
+              f"{{\\an{alignment}\\pos({x},{shadow_y})\\blur{config.CAPTION_SHADOW_BLUR:g}}}{shadow_text}")
     face = (f"Dialogue: 1,{start},{end},Editorial,,0,0,0,,"
-            f"{{\\an{alignment}\\pos({x},{y})}}{text}")
+            f"{{\\an{alignment}\\pos({x},{y})}}{face_text}")
     return shadow + "\n" + face
 
 
 def _run_whisper(audio_path: Path, device: str, compute: str) -> list[dict]:
     """Load + transcribe. ctranslate2 errors surface while iterating segments,
     so we materialize the generator here to catch a missing-CUDA failure."""
-    from faster_whisper import WhisperModel
-
-    model = WhisperModel(config.WHISPER_MODEL, device=device, compute_type=compute)
+    model = _get_whisper_model(config.WHISPER_MODEL, device, compute)
     segments, _ = model.transcribe(str(audio_path), word_timestamps=True, vad_filter=True)
     words: list[dict] = []
     for seg in segments:                       # iteration triggers actual compute
@@ -149,10 +236,15 @@ def _align_to_script(wwords: list[dict], true_text: str) -> list[dict]:
 
 
 def transcribe_words(audio_path: Path) -> list[dict]:
-    if config.WHISPER_DEVICE == "cuda":
+    global _CUDA_WHISPER_AVAILABLE
+    if config.WHISPER_DEVICE == "cuda" and _CUDA_WHISPER_AVAILABLE is not False:
         try:
-            return _run_whisper(audio_path, "cuda", "float16")
+            words = _run_whisper(audio_path, "cuda", "float16")
+            _CUDA_WHISPER_AVAILABLE = True
+            return words
         except Exception as e:  # noqa: BLE001 - CUDA libs (cublas/cudnn) not present
+            _CUDA_WHISPER_AVAILABLE = False
+            _WHISPER_MODELS.pop((config.WHISPER_MODEL, "cuda", "float16"), None)
             log(f"whisper cuda unavailable ({type(e).__name__}); falling back to cpu")
     return _run_whisper(audio_path, "cpu", "int8")
 

@@ -211,6 +211,8 @@ def render_external(
     append_follow_card: bool = True,
     logo_path: Path | None = None,
     outro_image_path: Path | None = None,
+    thumbnail_1_path: Path | None = None,
+    thumbnail_2_path: Path | None = None,
 ) -> Path:
     if config.GENERATION_MODE != "external":
         raise RuntimeError("render-external requires GENERATION_MODE=external")
@@ -240,6 +242,13 @@ def render_external(
     write_json(video.script_path, script.model_dump())
     write_json(video.dir / "script.json", script.model_dump())
     write_json(video.dir / "article.json", article)
+
+    if thumbnail_1_path and Path(thumbnail_1_path).is_file():
+        from .thumbnails import save_thumbnail
+        save_thumbnail(video.dir, 1, Path(thumbnail_1_path).read_bytes(), Path(thumbnail_1_path).name, make_primary=True)
+    if thumbnail_2_path and Path(thumbnail_2_path).is_file():
+        from .thumbnails import save_thumbnail
+        save_thumbnail(video.dir, 2, Path(thumbnail_2_path).read_bytes(), Path(thumbnail_2_path).name)
 
     audio_info = voice.synthesize(video.audio_dir, script)
     cursor = 0.0

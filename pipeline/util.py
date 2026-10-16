@@ -36,6 +36,8 @@ def run(cmd: list[str], quiet: bool = True) -> None:
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
+        encoding="utf-8",
+        errors="replace",
     )
     if proc.returncode != 0:
         sys.stdout.write(proc.stdout)
@@ -48,11 +50,11 @@ def ffprobe_duration(path: Path) -> float:
     """Return media duration in seconds."""
     if shutil.which("ffprobe"):
         out = subprocess.run(
-        [
-            "ffprobe", "-v", "error", "-show_entries", "format=duration",
-            "-of", "default=noprint_wrappers=1:nokey=1", str(path),
-        ],
-        capture_output=True, text=True,
+            [
+                "ffprobe", "-v", "error", "-show_entries", "format=duration",
+                "-of", "default=noprint_wrappers=1:nokey=1", str(path),
+            ],
+            capture_output=True, text=True, encoding="utf-8", errors="replace",
         )
         try:
             return float(out.stdout.strip())
@@ -63,7 +65,7 @@ def ffprobe_duration(path: Path) -> float:
     try:
         import imageio_ffmpeg
         out = subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-i", str(path)],
-                             capture_output=True, text=True)
+                             capture_output=True, text=True, encoding="utf-8", errors="replace")
         match = re.search(r"Duration: (\d+):(\d+):(\d+(?:\.\d+)?)", out.stderr or "")
         if match:
             h, m, s = match.groups()

@@ -54,8 +54,11 @@
   {% for v in videos %}
   <div class="card">
     <a href="/v/{{ v.id }}">
-      <div class="vidwrap">
-        <video src="/media/{{ v.id }}/final.mp4#t=0.5" muted preload="metadata"></video>
+      <div class="vidwrap" style="aspect-ratio:{{ '16/9' if v.aspect_ratio == '16:9' else '9/16' }}">
+        <video src="/media/{{ v.id }}/final.mp4#t=0.5" muted preload="metadata"{% if v.thumbnail_url %} poster="{{ v.thumbnail_url }}"{% endif %}></video>
+        {% if v.thumbnail_url %}
+        <span style="position:absolute;top:8px;right:8px;background:rgba(12,17,24,0.85);backdrop-filter:blur(6px);border:1px solid rgba(245,166,35,0.4);border-radius:6px;font-size:10px;font-weight:800;color:var(--accent);padding:3px 7px;text-transform:uppercase;letter-spacing:0.5px;z-index:2;box-shadow:0 2px 6px rgba(0,0,0,0.5)">Cover</span>
+        {% endif %}
       </div>
     </a>
     <div class="meta">

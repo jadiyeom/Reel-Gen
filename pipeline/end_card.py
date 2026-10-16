@@ -3,6 +3,9 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+import os
+import shutil
+import time
 
 from . import config
 from .util import ffprobe_duration, log, run
@@ -71,6 +74,16 @@ def append_outro_image_to_video(video_path: Path, outro_image_path: Path | None 
     ])
     if not combined_path.is_file() or combined_path.stat().st_size == 0:
         raise RuntimeError("FFmpeg did not produce the video with its outro image.")
-    os.replace(combined_path, video_path)
+    replaced = False
+    for attempt in range(10):
+        try:
+            os.replace(combined_path, video_path)
+            replaced = True
+            break
+        except (PermissionError, OSError):
+            time.sleep(0.3)
+    if not replaced:
+        video_path.unlink(missing_ok=True)
+        shutil.move(str(combined_path), str(video_path))
     log(f"outro image appended ({outro_image.name}; {duration:.2f}s; final={ffprobe_duration(video_path):.2f}s)")
     return video_path

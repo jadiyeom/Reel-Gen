@@ -36,6 +36,10 @@
 <label class="drop" id="logoDrop"><strong>↳ Watermark logo · optional</strong><small>Upload a PNG logo to overlay on the reel. This is separate from the outro; transparent backgrounds work best.</small><input type="file" name="logo" id="logoFile" accept=".png,image/png"><small id="logoName">No file selected</small></label>
 <label class="drop" id="outroDrop"><strong>↳ Custom outro image · optional</strong><small>Upload PNG, JPG, or WEBP to replace the default Backspace robot outro. Leave empty to use the default artwork.</small><input type="file" name="outro_image" id="outroFile" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"><small id="outroName">Using default Backspace outro</small></label>
 </div>
+<div class="upload-grid" style="margin-top:16px">
+<label class="drop" id="thumb1Drop"><strong>↳ Thumbnail 1 · optional</strong><small>Primary / A-variant thumbnail (PNG, JPG, WEBP). Recommended 1080×1920 (9:16) or 1280×720 (16:9).</small><input type="file" name="thumbnail_1" id="thumb1File" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"><small id="thumb1Name">No file selected</small></label>
+<label class="drop" id="thumb2Drop"><strong>↳ Thumbnail 2 · optional</strong><small>Variant B thumbnail for A/B testing or alternative cover styling.</small><input type="file" name="thumbnail_2" id="thumb2File" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"><small id="thumb2Name">No file selected</small></label>
+</div>
 <div style="display:flex;align-items:center;padding:8px 4px 2px"><div><label class="toggle"><input type="hidden" name="append_follow_card_present" value="1"><input type="checkbox" name="append_follow_card" id="appendFollowCard" value="on" checked> Append final Backspace outro image</label><p class="micro" style="margin:8px 0 0 25px">On by default. No extra generated outro card is added.</p></div></div>
 <label class="field" for="articleUrl">Source article URL</label><input type="text" name="article_url" id="articleUrl" placeholder="Read from script.json if already included">
 <div class="upload-grid"><div><label class="field" for="aspectRatio">Video format</label><select id="aspectRatio" name="aspect_ratio"><option value="9:16">9:16 · Shorts / Reels</option><option value="16:9">16:9 · YouTube landscape</option></select></div><div style="display:flex;align-items:flex-end;padding-bottom:3px"><label class="toggle"><input type="checkbox" name="captions" id="captions" checked> Burn in timed captions</label></div></div>
@@ -43,7 +47,9 @@
 <div id="renderStatus" class="status hidden" aria-live="polite"></div><div id="renderProgress" class="progress-shell hidden"><span id="renderProgressBar"></span></div></section>
 
 <section class="panel hidden" id="resultPanel"><h2>02 / Review the finished video</h2><p class="sub">Preview the render and check its platform copy before posting.</p>
-<div class="video-layout"><div><video id="videoPlayer" class="preview" controls playsinline></video><div class="row" style="margin-top:12px"><a id="downloadVideo" class="btn secondary" href="#" download>↓ Download MP4</a><a id="openReview" class="btn secondary" href="#">Open review page ↗</a></div></div>
+<div class="video-layout"><div><video id="videoPlayer" class="preview" controls playsinline></video><div class="row" style="margin-top:12px"><a id="downloadVideo" class="btn secondary" href="#" download>↓ Download MP4</a><a id="openReview" class="btn secondary" href="#">Open review page ↗</a></div>
+<div id="extThumbs" class="copybox hidden" style="margin-top:16px"><label>Uploaded Thumbnails (2 Options)</label><div id="extThumbsGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px"></div></div>
+</div>
 <div><h3 id="videoTitle" style="font-size:19px;margin-bottom:6px"></h3><p id="videoSource" class="micro"></p><div class="copybox"><label>YouTube title</label><p id="ytTitle"></p></div><div class="copybox"><label>YouTube description</label><p id="ytDescription"></p></div><div class="copybox"><label>Instagram caption</label><p id="igCaption"></p></div><div class="copybox"><label>X caption</label><p id="xCaption"></p></div><div class="copybox"><label>TikTok caption · manual upload</label><p id="ttCaption"></p></div></div></div></section>
 
 <section class="panel hidden" id="publishPanel"><h2>03 / Publish to your social accounts</h2><p class="sub">Select destinations and publish from one button. Each destination reports success or failure independently; already-published destinations are skipped to prevent duplicate posts.</p>
@@ -65,7 +71,9 @@ $('scriptFile').addEventListener('change',()=>setFileLabel($('scriptFile'),'scri
 $('imagesFile').addEventListener('change',()=>setFileLabel($('imagesFile'),'imagesName'));
 $('logoFile').addEventListener('change',()=>setFileLabel($('logoFile'),'logoName'));
 $('outroFile').addEventListener('change',()=>setFileLabel($('outroFile'),'outroName'));
-[['scriptDrop','scriptFile','scriptName'],['imagesDrop','imagesFile','imagesName'],['logoDrop','logoFile','logoName'],['outroDrop','outroFile','outroName']].forEach(row=>{
+$('thumb1File').addEventListener('change',()=>setFileLabel($('thumb1File'),'thumb1Name'));
+$('thumb2File').addEventListener('change',()=>setFileLabel($('thumb2File'),'thumb2Name'));
+[['scriptDrop','scriptFile','scriptName'],['imagesDrop','imagesFile','imagesName'],['logoDrop','logoFile','logoName'],['outroDrop','outroFile','outroName'],['thumb1Drop','thumb1File','thumb1Name'],['thumb2Drop','thumb2File','thumb2Name']].forEach(row=>{
  const zone=$(row[0]);zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('drag')});
  zone.addEventListener('dragleave',()=>zone.classList.remove('drag'));
  zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('drag');if(e.dataTransfer.files.length){$(row[1]).files=e.dataTransfer.files;setFileLabel($(row[1]),row[2]);}});
@@ -101,6 +109,21 @@ $('renderForm').addEventListener('submit',async e=>{
    $('videoTitle').textContent=meta.title||activeVideoId;$('videoSource').textContent=meta.source_url||'';
    $('ytTitle').textContent=meta.youtube_title||'';$('ytDescription').textContent=meta.youtube_description||'';
    $('igCaption').textContent=meta.instagram_caption||'';$('xCaption').textContent=meta.x_caption||'';$('ttCaption').textContent=meta.tiktok_caption||'';
+   const thumbs=meta.thumbnails||{};
+   if(thumbs.slot_1||thumbs.slot_2){
+    $('extThumbs').classList.remove('hidden');
+    if(thumbs.primary&&thumbs.primary.url)$('videoPlayer').poster=thumbs.primary.url+'?t='+Date.now();
+    $('extThumbsGrid').innerHTML=[1,2].map(slot=>{
+     const t=thumbs['slot_'+slot];
+     if(!t)return '<div style="border:1px dashed rgba(255,255,255,.14);border-radius:10px;padding:12px;text-align:center;color:var(--muted);font-size:11px">Slot '+slot+'<br>No thumbnail</div>';
+     return '<div style="border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:8px;background:rgba(255,255,255,.02)">'+
+      '<div style="position:relative;aspect-ratio:9/16;border-radius:8px;overflow:hidden;background:#000;margin-bottom:6px"><img src="'+esc(t.url)+'?t='+Date.now()+'" style="width:100%;height:100%;object-fit:cover;display:block">'+
+      (t.is_primary?'<span style="position:absolute;top:6px;left:6px;background:var(--accent);color:#1a1205;font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px;text-transform:uppercase">Primary</span>':'')+
+      '</div><div style="font-size:11px;font-weight:700">Thumbnail '+slot+'</div>'+
+      '<div style="font-size:10px;color:var(--muted)">'+(t.width?t.width+'×'+t.height:'')+'</div>'+
+      '<div style="margin-top:6px"><a href="'+esc(t.download_url)+'" class="btn secondary" style="padding:4px 8px;font-size:11px;width:100%" download>Download</a></div></div>';
+    }).join('');
+   }else{$('extThumbs').classList.add('hidden');}
    setStatus('renderStatus','Render complete. Review the video and select where to publish.');
    $('confirmPublish').checked=false;$('publishButton').disabled=true;window.scrollTo({top:$('resultPanel').offsetTop-90,behavior:'smooth'});await refreshAccounts();
   },err=>setStatus('renderStatus',err,true),'renderProgress','renderProgressBar');

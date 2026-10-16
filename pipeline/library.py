@@ -57,9 +57,13 @@ def embed(text: str) -> list[float]:
     return r.data[0].embedding
 
 
+_EMBED_CACHE: dict[str, list[float]] = {}
+
+
 def add_clip(row: dict, image_path: Path, video_path: Path, duration: float,
              embedding: list[float]) -> None:
     init_db()
+    _EMBED_CACHE[row["id"]] = embedding
     with _conn() as c:
         c.execute(
             """INSERT OR REPLACE INTO clips
@@ -119,10 +123,15 @@ def search_top(query_text: str, exclude_ids: set[str] | None = None,
     for clip in all_clips():
         if clip["id"] in exclude:
             continue
-        try:
-            vec = json.loads(clip["embedding"]) if clip["embedding"] else []
-        except (json.JSONDecodeError, TypeError):
-            vec = []
+        cid = clip["id"]
+        if cid in _EMBED_CACHE:
+            vec = _EMBED_CACHE[cid]
+        else:
+            try:
+                vec = json.loads(clip["embedding"]) if clip["embedding"] else []
+            except (json.JSONDecodeError, TypeError):
+                vec = []
+            _EMBED_CACHE[cid] = vec
         score = _cosine(qvec, vec) - clip["times_used"] * 0.001
         scored.append((clip, score))
     scored.sort(key=lambda x: x[1], reverse=True)
@@ -149,6 +158,7 @@ def update_description(clip_id: str, description: str) -> bool:
     if not clip:
         return False
     emb = embed(f"{description} ({clip['grp']})")
+    _EMBED_CACHE[clip_id] = emb
     with _conn() as c:
         c.execute("UPDATE clips SET description=?, embedding=? WHERE id=?",
                   (description, json.dumps(emb), clip_id))
@@ -167,6 +177,7 @@ def mark_used(clip_id: str, video_slug: str) -> None:
 def delete_clip(clip_id: str) -> bool:
     """Remove a clip from the catalog and delete its files (curation)."""
     init_db()
+    _EMBED_CACHE.pop(clip_id, None)
     with _conn() as c:
         row = c.execute("SELECT image_path, video_path FROM clips WHERE id=?", (clip_id,)).fetchone()
         if not row:

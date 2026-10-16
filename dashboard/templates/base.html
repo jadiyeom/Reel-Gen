@@ -25,20 +25,29 @@
     background:linear-gradient(120deg,var(--accent),var(--accent2));color:#0a0a0a;
     font-weight:700;border:none;cursor:pointer;font-size:15px}
   .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.15);color:var(--text)}
+  #mainNav a{color:var(--muted);transition:color .15s}
+  #mainNav a:hover{color:var(--text)}
+  #mainNav a.active{color:var(--accent);font-weight:700}
 </style>
 </head>
 <body>
 <header>
   <a href="/" style="display:flex;align-items:center;gap:14px">
     <span class="dot"></span><span class="name">Shorts Studio</span></a>
-  <nav style="display:flex;gap:22px;margin-left:34px;font-size:15px;font-weight:600">
-    <a href="/" style="color:var(--muted)">Videos</a>
-    <a href="/create" style="color:var(--muted)">Create</a>
-    <a href="/external" style="color:var(--muted)">Upload &amp; Publish</a>
-    <a href="/library" style="color:var(--muted)">Library</a>
+  <nav id="mainNav" style="display:flex;gap:22px;margin-left:34px;font-size:15px;font-weight:600">
+    <a href="/">Videos</a>
+    <a href="/create">Create</a>
+    <a href="/external">Upload &amp; Publish</a>
+    <a href="/library">Library</a>
   </nav>
   <span class="muted">{% block subtitle %}content pipeline{% endblock %}</span>
 </header>
 <div class="wrap">{% block body %}{% endblock %}</div>
+<script>
+document.querySelectorAll('#mainNav a').forEach(a=>{
+  const h=a.getAttribute('href');
+  if(h===location.pathname||(h!=='/'&&location.pathname.startsWith(h))) a.classList.add('active');
+});
+</script>
 </body>
 </html>

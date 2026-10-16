@@ -30,7 +30,7 @@ _KB = {
 
 
 def _ass_path_escape(p: Path) -> str:
-    return str(p).replace("\\", "/").replace(":", "\\:")
+    return str(p).replace("\\", "/").replace(":", "\\:").replace("'", "'\\''")
 
 
 def _ken_burns(image: Path, dur: float, out: Path, preset: str) -> None:
@@ -277,12 +277,12 @@ def _mux(visuals: Path, audio: Path, ass_path: Path | None, final: Path,
         run(["ffmpeg", "-y", "-i", str(visuals), "-i", str(audio),
              "-filter_complex", vf, "-map", f"[{current}]", "-map", "1:a",
              "-c:v", "libx264", "-preset", "medium", "-crf", "18",
-             "-c:a", "aac", "-b:a", "192k", "-shortest", str(final)])
+             "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", "-shortest", str(final)])
     else:
         run(["ffmpeg", "-y", "-i", str(visuals), "-i", str(audio),
              "-map", "0:v", "-map", "1:a",
              "-c:v", "libx264", "-preset", "medium", "-crf", "18",
-             "-c:a", "aac", "-b:a", "192k", "-shortest", str(final)])
+             "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", "-shortest", str(final)])
 
 
 def build_preview_base(video) -> Path:

@@ -2,8 +2,14 @@
 REM Start the review dashboard (local website) and open it in the browser.
 cd /d "%~dp0"
 
-echo Starting Shorts Studio dashboard...
-start "ShortsStudio" /min cmd /c "python run.py serve"
+if exist ".venv\Scripts\python.exe" (
+    set "PY=.venv\Scripts\python.exe"
+) else (
+    set "PY=python"
+)
+
+echo Starting Shorts Studio dashboard using %PY%...
+start "ShortsStudio" /min cmd /c "%PY% run.py serve"
 
 REM give the server a moment to boot, then open the browser
 timeout /t 2 /nobreak >nul

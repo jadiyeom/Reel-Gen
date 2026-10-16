@@ -112,6 +112,8 @@ python run.py fetch-library 20   # pull FREE Pexels/Pixabay stock into the libra
 python run.py gen-library 10     # AI-generate library clips from library/inventory.csv (fal)
 python run.py library-stats      # show library counts / usage
 python run.py list               # list generated videos
+python run.py doctor             # run system environment & dependency diagnostics
+python run.py test               # run the automated test suite
 python run.py serve              # open the review dashboard at http://127.0.0.1:5000
 ```
 
@@ -190,7 +192,9 @@ Everything is environment-driven — see [`.env.example`](.env.example) for the 
 | `CONTENT_NICHE` | – | Focus the writer (e.g. `personal finance`) |
 | `SCRIPT_PROMPT` | – | Swap in a custom writer preset from `prompts/presets/` |
 | `TTS_BACKEND` | `chatterbox` | `chatterbox` (local, reference-conditioned), `kokoro` fallback, `openai`, or `silent` |
-| `CHATTERBOX_PYTHON` | Chatterbox test venv | Python executable for the separate Chatterbox environment |\n| `CHATTERBOX_REFERENCE_AUDIO` | `D:\\AI\\chatterbox-test\\reference.mp3` | Reference recording for Chatterbox voice conditioning |\n| `KOKORO_VOICE` | `af_heart` | Local Kokoro fallback voice pack |
+| `CHATTERBOX_PYTHON` | Chatterbox test venv | Python executable for the separate Chatterbox environment |
+| `CHATTERBOX_REFERENCE_AUDIO` | `D:\\AI\\chatterbox-test\\reference.mp3` | Reference recording for Chatterbox voice conditioning |
+| `KOKORO_VOICE` | `af_heart` | Local Kokoro fallback voice pack |
 | `KOKORO_SPEED` | `1.0` | Kokoro speaking speed |
 | `KOKORO_LANG` | `en-us` | Kokoro language |
 | `TTS_VOICE` | `onyx` | Voice used by the optional OpenAI TTS backend |
